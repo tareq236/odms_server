@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'conveyance_app',
     'web_view_app',
     'visit_app',
+    'sap_app',
 ]
 
 MIDDLEWARE = [

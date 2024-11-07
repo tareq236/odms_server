@@ -18,3 +18,20 @@ class ReturnSapModel(models.Model):
         db_table = "rdl_return_sap"
         verbose_name = "SAP Return"
         verbose_name_plural = "SAP Return"
+        
+        
+class ReturnListSAPModel(models.Model):
+    id=models.BigAutoField(primary_key=True)
+    matnr=models.CharField(max_length=10,null=False)
+    batch=models.CharField(max_length=10,null=False)
+    return_quantity=models.IntegerField(null=False)
+    sales_quantity=models.IntegerField(null=False)
+    return_no=models.ForeignKey(ReturnSapModel, on_delete=models.PROTECT)
+    
+    def __str__(self):
+        return f'{self.matnr}- {self.batch}'
+    
+    class Meta:
+        db_table = "rdl_return_list_sap"
+        verbose_name = "SAP Return List"
+        verbose_name_plural = "SAP Return List"
