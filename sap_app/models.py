@@ -10,6 +10,9 @@ class ReturnSapModel(models.Model):
     route=models.CharField(max_length=10,null=False)
     return_type=models.CharField(max_length=10,null=False, choices=ReturnType.choices)
     return_reason=models.CharField(max_length=10,null=False, choices=ReturnReason.choices)
+    da_code=models.CharField(max_length=10,null=False)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f'{self.billing_doc_no}- {self.billing_date}'
@@ -25,9 +28,9 @@ class ReturnListSAPModel(models.Model):
     matnr=models.CharField(max_length=10,null=False)
     batch=models.CharField(max_length=10,null=False)
     return_quantity=models.IntegerField(null=False)
-    sales_quantity=models.IntegerField(null=False)
     return_no=models.ForeignKey(ReturnSapModel, on_delete=models.PROTECT)
     
+  
     def __str__(self):
         return f'{self.matnr}- {self.batch}'
     
