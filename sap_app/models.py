@@ -27,8 +27,12 @@ class ReturnListSAPModel(models.Model):
     id=models.BigAutoField(primary_key=True)
     matnr=models.CharField(max_length=10,null=False)
     batch=models.CharField(max_length=10,null=False)
+    sales_quantity=models.IntegerField(null=False)
     return_quantity=models.IntegerField(null=False)
-    return_no=models.ForeignKey(ReturnSapModel, on_delete=models.PROTECT)
+    return_amount=models.DecimalField(null=False, max_digits=12, decimal_places=2)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    return_id=models.ForeignKey(ReturnSapModel, on_delete=models.PROTECT)
     
   
     def __str__(self):
