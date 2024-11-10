@@ -11,6 +11,8 @@ class ReturnSapModel(models.Model):
     return_type=models.CharField(max_length=10,null=False, choices=ReturnType.choices)
     return_reason=models.CharField(max_length=10,null=False, choices=ReturnReason.choices)
     da_code=models.CharField(max_length=10,null=False)
+    sales_product_quantity=models.IntegerField(null=False)
+    return_product_quantity=models.IntegerField(null=False)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     
