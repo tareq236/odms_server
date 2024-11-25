@@ -26,7 +26,8 @@ def overdue_list(request,da_code):
             d.net_val,
             d.return_amount,
             dl.matnr,
-            
+            m.material_name,
+            m.producer_company,
             dl.batch,
             dl.delivery_quantity,
             dl.delivery_net_val,
@@ -42,7 +43,7 @@ def overdue_list(request,da_code):
         LEFT JOIN rpl_customer c ON d.partner=c.partner
         LEFT JOIN rdl_user_list ul ON d.da_code=ul.sap_id
         LEFT JOIN rdl_delivery_list dl ON d.id = dl.delivery_id
-        
+        INNER JOIN rpl_material m ON dl.matnr=m.matnr
         WHERE 
             d.route_code = %s 
             AND d.due_amount != 0 
@@ -91,7 +92,7 @@ def overdue_list(request,da_code):
                 billing_doc = {
                     "billing_doc_no": str(billing_doc_no),
                     "billing_date": billing_date,
-                    
+                    "producer_company": row[10],
                     "gate_pass_no": row[3],
                     "da_code": row[4],
                     "due_amount": row[5],
@@ -104,7 +105,8 @@ def overdue_list(request,da_code):
             # Append material details to the existing billing_doc's "materials"
             billing_doc["materials"].append({
                 "matnr": row[8],
-                
+                "material_name": row[9],
+                "producer_company": row[10],
                 "batch": row[11],
                 "delivery_quantity": row[12],
                 "delivery_net_val": row[13],
