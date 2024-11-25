@@ -36,6 +36,8 @@ def overdue_list(request,da_code):
             CONCAT(c.name1,c.name2) AS customer_name,
             CONCAT(c.street,c.street1,c.street2) AS customer_address,
             c.mobile_no AS customer_mobile,
+            cl.latitude AS customer_latitude,
+            cl.longitude AS customer_longitude,
             ul.full_name AS da_full_name,
             ul.mobile_number AS da_mobile_no
         FROM 
@@ -43,6 +45,7 @@ def overdue_list(request,da_code):
         LEFT JOIN rpl_customer c ON d.partner=c.partner
         LEFT JOIN rdl_user_list ul ON d.da_code=ul.sap_id
         LEFT JOIN rdl_delivery_list dl ON d.id = dl.delivery_id
+        LEFT JOIN rdl_customer_location cl ON d.partner=cl.customer_id
         INNER JOIN rpl_material m ON dl.matnr=m.matnr
         WHERE 
             d.route_code = %s 
@@ -65,6 +68,8 @@ def overdue_list(request,da_code):
             "customer_name": None,
             "customer_address": None,
             "customer_mobile": None,
+            "customer_latitude": None,
+            "customer_longitude": None,
             "da_full_name": None,
             "da_mobile_no": None,
             "billing_docs": []
@@ -80,7 +85,8 @@ def overdue_list(request,da_code):
                 result[partner]["customer_name"] = row[16]  
                 result[partner]["customer_address"] = row[17]  
                 result[partner]["customer_mobile"] = row[18] 
-                 
+                result[partner]["customer_latitude"] = row[19] 
+                result[partner]["customer_longitude"] = row[20] 
                 result[partner]["da_full_name"] = row[21]  
                 result[partner]["da_mobile_no"] = row[22] 
 
