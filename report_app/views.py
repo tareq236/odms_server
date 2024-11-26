@@ -66,3 +66,34 @@ def dashboard_report(request,sap_id):
             'distance': distance
         }]}, status=status.HTTP_200_OK)
     
+@api_view(['GET'])
+def dashboard_info(request,sap_id):
+    if request.method == 'GET':   
+        sap_query="""
+            SELECT COUNT(DISTINCT sis.gate_pass_no) total_gate_pass,SUM(sis.net_val+vat) total_gate_pass_amount,COUNT(DISTINCT sis.partner) total_customer, dis.route, rs.description 
+            FROM rdl_delivery_info_sap dis 
+            INNER JOIN rpl_sales_info_sap sis ON dis.billing_doc_no=sis.billing_doc_no
+            INNER JOIN rdl_route_sap rs ON dis.route=rs.route
+            WHERE dis.da_code=%s AND dis.billing_date=CURRENT_DATE;
+        """
+        result=execute_raw_query(sap_query,[sap_id])
+        route_id=None
+        route_name=""
+        total_gate_pass=0
+        total_gate_pass_amount=0
+        total_customer=0
+        if result:
+            total_gate_pass=result[0][0]
+            total_gate_pass_amount=result[0][1]
+            total_customer=result[0][2]
+            route_id=result[0][3]
+            route_name=result[0][4]
+        
+        response_data={
+            'route_id': route_id,
+            'route_name': route_name,
+            'total_gate_pass':total_gate_pass,
+            'total_gate_pass_amount':total_gate_pass_amount,
+            'total_customer':total_customer
+        }
+        return Response({"success":True,"result":response_data},status=status.HTTP_200_OK)
