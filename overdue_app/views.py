@@ -5,6 +5,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from collection_app.utils import get_da_route
 from collections import defaultdict
+from delivery_app.models import DeliveryModel
+from collection_app import utils
+from decimal import Decimal
+from datetime import datetime,timedelta
+from collection_app.constants import tz_Dhaka
 
 # Create your views here.
 
@@ -124,4 +129,28 @@ def overdue_list(request,da_code):
         response_data = list(result.values())
         
         return Response({"success": True, "result": response_data}, status=status.HTTP_200_OK)
+    
+@api_view(['PUT'])
+def collect_overdue(request):
+    if request.method == 'PUT':
+        data = request.data
+        billing_doc_no=data.get('billing_doc_no')
+        da_code=data.get('da_code')
+        cash_collection = Decimal(str(data.get('cash_collection', '0')))
+        cash_collection_latitude=data.get('cash_collection_latitude')
+        cash_collection_longitude=data.get('cash_collection_longitude')
+        print(cash_collection,billing_doc_no,da_code)
+        try:
+            delivery = DeliveryModel.objects.get(billing_doc_no=billing_doc_no)
+        except DeliveryModel.DoesNotExist:
+            return Response({"success":False,"message": "Delivery not found"}, status=status.HTTP_200_OK)
+        if cash_collection>delivery.due_amount:
+            return Response({"success":False,"message":"Cash collection exceed the due amount"}, status=status.HTTP_200_OK)
+
+        delivery.due_amount =round(delivery.due_amount-cash_collection,2)
+        delivery.cash_collection+=cash_collection
+        delivery.save()
+        utils.CreatePaymentHistoryObject(billing_doc_no=billing_doc_no,partner=delivery.partner,da_code=da_code,route_code=delivery.route_code,cash_collection=cash_collection,cash_collection_date_time=datetime.now(tz_Dhaka),cash_collection_latitude=cash_collection_latitude,cash_collection_longitude=cash_collection_longitude)
+        return Response({"success": True,"message":"successfully collect overdue", "result":data}, status=status.HTTP_200_OK)
+    return Response({"success":False,"message":'wrong method'},status=status.HTTP_200_OK)
 
