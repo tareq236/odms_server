@@ -49,6 +49,8 @@ def customer_list(request,da_code):
         # Get Route
         print(da_code)
         route = get_da_route(da_code)
+        if not route:
+            return Response({"success":True, "message":"Route not found for today"},status=status.HTTP_200_OK)
         newRoute="0000"+str(route)
         # Base SQL query
         sql_query = "SELECT * FROM rpl_customer WHERE 1=1 AND trans_p_zone = %s"
