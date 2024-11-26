@@ -34,4 +34,9 @@ class MobileAppVersion(models.Model):
 
     def __str__(self):
         return f"Mobile App Version {self.version} (Build {self.build_number})"
+    
+    class Meta:
+        db_table = "rdl_odms_mobile_app"
+        verbose_name = "ODMS Mobile App"
+        verbose_name_plural = "ODMS Mobile App"
 
