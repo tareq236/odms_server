@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload APK</title>
+</head>
+<body>
+    <h1>Upload APK</h1>
+
+    <!-- Display the current version if it exists -->
+    {% if current_version %}
+    <div>
+        <h2>Current Version Details</h2>
+        <p><strong>Version:</strong> {{ current_version.version }}</p>
+        <p><strong>Build Number:</strong> {{ current_version.build_number }}</p>
+        <p><strong>Force Update:</strong> {{ current_version.force_to_update }}</p>
+        <p><strong>Uploaded On:</strong> {{ current_version.upload_date }}</p>
+        <p><strong>Main APK:</strong> <a href="{{ current_version.main_file.url }}" download>Download</a></p>
+        {% if current_version.x86_64_file %}
+            <p><strong>x86_64 APK:</strong> <a href="{{ current_version.x86_64_file.url }}" download>Download</a></p>
+        {% endif %}
+        {% if current_version.armeabi_v7a_file %}
+            <p><strong>armeabi-v7a APK:</strong> <a href="{{ current_version.armeabi_v7a_file.url }}" download>Download</a></p>
+        {% endif %}
+        {% if current_version.arm64_v8a_file %}
+            <p><strong>arm64-v8a APK:</strong> <a href="{{ current_version.arm64_v8a_file.url }}" download>Download</a></p>
+        {% endif %}
+    </div>
+    <hr>
+    {% endif %}
+
+    <!-- APK Upload Form -->
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div>
+            <label for="version">Version:</label>
+            <input type="text" id="version" name="version" placeholder="e.g., 1.0.1" required>
+        </div>
+        <div>
+            <label for="build_number">Build Number:</label>
+            <input type="text" id="build_number" name="build_number" placeholder="e.g., 2" required>
+        </div>
+        <div>
+            <label for="force_to_update">Force Update:</label>
+            <input type="checkbox" id="force_to_update" name="force_to_update">
+        </div>
+        <div>
+            <label for="remove_cache_on_update">Remove Cache on Update:</label>
+            <input type="checkbox" id="remove_cache_on_update" name="remove_cache_on_update">
+        </div>
+        <div>
+            <label for="remove_data_on_update">Remove Data on Update:</label>
+            <input type="checkbox" id="remove_data_on_update" name="remove_data_on_update">
+        </div>
+        <div>
+            <label for="remove_cache_and_data_on_update">Remove Cache and Data on Update:</label>
+            <input type="checkbox" id="remove_cache_and_data_on_update" name="remove_cache_and_data_on_update">
+        </div>
+        <div>
+            <label for="main_file">Main APK:</label>
+            <input type="file" id="main_file" name="main_file" accept=".apk" required>
+        </div>
+        <div>
+            <label for="x86_64_file">x86_64 APK (optional):</label>
+            <input type="file" id="x86_64_file" name="x86_64_file" accept=".apk">
+        </div>
+        <div>
+            <label for="armeabi_v7a_file">armeabi-v7a APK (optional):</label>
+            <input type="file" id="armeabi_v7a_file" name="armeabi_v7a_file" accept=".apk">
+        </div>
+        <div>
+            <label for="arm64_v8a_file">arm64-v8a APK (optional):</label>
+            <input type="file" id="arm64_v8a_file" name="arm64_v8a_file" accept=".apk">
+        </div>
+        <button type="submit">Upload APK</button>
+    </form>
+</body>
+</html>
