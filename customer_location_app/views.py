@@ -114,6 +114,8 @@ def customer_list_v2(request,da_code):
     if request.method == 'GET':
         # Get Route
         route=get_da_route(da_code)
+        if not route:
+            return Response({"success": True, "message": "Route not found"}, status=status.HTTP_200_OK)
         new_route="0000"+str(route)
         sql=f"SELECT * FROM rpl_customer WHERE trans_p_zone = '{new_route}'"
         search_name = request.GET.get('name1', '')
