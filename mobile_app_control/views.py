@@ -2,18 +2,23 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import MobileAppVersion
 
+def str_to_bool(value):
+    return value in ['true', 'True', '1', 'on']
 def upload_apk(request):
     if request.method == 'POST':
         # Get or create the single object
         version_instance = MobileAppVersion.objects.first() or MobileAppVersion()
-
+        password = "rdl@odms@Rdl#impala"
+        user_password = request.POST.get('password')
+        if user_password != password:
+            return
         # Update fields
         version_instance.version = request.POST.get('version', '1.0.0')
         version_instance.build_number = request.POST.get('build_number', '1')
-        version_instance.force_to_update = request.POST.get('force_to_update', 'false') == 'true'
-        version_instance.remove_cache_on_update = request.POST.get('remove_cache_on_update', 'false') == 'true'
-        version_instance.remove_data_on_update = request.POST.get('remove_data_on_update', 'false') == 'true'
-        version_instance.remove_cache_and_data_on_update = request.POST.get('remove_cache_and_data_on_update', 'false') == 'true'
+        version_instance.force_to_update = str_to_bool(request.POST.get('force_to_update', 'false'))
+        version_instance.remove_cache_on_update = str_to_bool(request.POST.get('remove_cache_on_update', 'false'))
+        version_instance.remove_data_on_update = str_to_bool(request.POST.get('remove_data_on_update', 'false'))
+        version_instance.remove_cache_and_data_on_update = str_to_bool(request.POST.get('remove_cache_and_data_on_update', 'false'))
 
         # Update files if provided
         if 'main_file' in request.FILES:
