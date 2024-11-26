@@ -45,9 +45,15 @@ def get_sap_data(da_code):
         ]
 
     if not results:
-        a=get_da_info(da_code)
+        da=get_da_info(da_code)
+        da_info={
+            "da_code": da_code,
+            "da_name": da[0][0],
+            "billing_date": da[0][1],
+            "route":""
+        }
         return {
-            "da_info": {},
+            "da_info": da_info,
             "total_data": {"total_invoice": 0, "total_amount": 0, "total_gate_pass": 0},
             "sap_data": {}
         }  # Return empty if no results found
