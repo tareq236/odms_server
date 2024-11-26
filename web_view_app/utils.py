@@ -35,7 +35,11 @@ def get_sap_data(da_code):
         ]
 
     if not results:
-        return {}  # Return empty if no results found
+        return {
+            "da_info": {},
+            "total_data": {"total_invoice": 0, "total_amount": 0, "total_gate_pass": 0},
+            "sap_data": {}
+        }  # Return empty if no results found
     # Prepare da_info 
     da_info = {
         "da_code": results[0]["da_code"],
@@ -65,7 +69,9 @@ def get_sap_data(da_code):
             # "billing_doc_list": result["billing_doc_list"].split(',') if result["billing_doc_list"] else [],
             # "net_val_list": result["net_val_list"].split(',') if result["net_val_list"] else []
         }
-    
+    print(da_info)
+    print(total_data)
+    print(sap_data)
     return {
         "da_info": da_info,
         "total_data": total_data,
