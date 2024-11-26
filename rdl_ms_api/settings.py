@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'visit_app',
     'sap_app',
     'overdue_app',
+    'mobile_app_control',
 ]
 
 MIDDLEWARE = [

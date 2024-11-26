@@ -19,4 +19,5 @@ urlpatterns = [
     path('api/v1/sap/', include('sap_app.urls')),
     path('api/v1/overdue/', include('overdue_app.urls')),
     path('web_view/v1/', include('web_view_app.urls')),
+    path('mobile_app/v1/', include('mobile_app_control.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
