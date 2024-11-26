@@ -3,6 +3,16 @@ from collection_app.models import ReturnListModel
 from collections import defaultdict
 from django.db import connection
 
+def get_da_info(da_code):
+    query = '''
+        SELECT ul.full_name, CURRENT_DATE AS billing_date
+        FROM rdl_user_list ul 
+        WHERE ul.sap_id=%s;
+    '''
+    with connection.cursor() as cursor:
+        cursor.execute(query, [da_code])
+        results = cursor.fetchall()
+    return results
 def get_sap_data(da_code):
     query = '''
         SELECT 
@@ -35,6 +45,7 @@ def get_sap_data(da_code):
         ]
 
     if not results:
+        a=get_da_info(da_code)
         return {
             "da_info": {},
             "total_data": {"total_invoice": 0, "total_amount": 0, "total_gate_pass": 0},
