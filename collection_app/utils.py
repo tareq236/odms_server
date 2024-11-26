@@ -5,7 +5,7 @@ from delivery_app.models import DeliveryInfoModel
 
 
 def get_da_route(da_code):
-    sql="SELECT billing_doc_no,route FROM rdl_delivery_info_sap WHERE da_code='%s' ORDER BY billing_date DESC LIMIT 1"
+    sql="SELECT billing_doc_no,route FROM rdl_delivery_info_sap WHERE da_code='%s' AND billing_date=CURRENT_DATE LIMIT 1"
     data=DeliveryInfoModel.objects.raw(sql,[da_code])
     data_list=list(data)
     if data_list:
