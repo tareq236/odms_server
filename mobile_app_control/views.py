@@ -1,9 +1,13 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import MobileAppVersion
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 def str_to_bool(value):
     return value in ['true', 'True', '1', 'on']
+
 def upload_apk(request):
     if request.method == 'POST':
         # Get or create the single object
@@ -38,3 +42,41 @@ def upload_apk(request):
     return render(request, 'upload_apk.html', {
         'current_version': MobileAppVersion.objects.first()
     })
+    
+
+@api_view(['GET'])
+def app_info(request):
+    try:
+        # Fetch the latest app version data
+        version_instance = MobileAppVersion.objects.first()
+        if not version_instance:
+            return Response({"success": True, "message": "No app version data available."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Prepare the data dynamically
+        data = {
+            "version": version_instance.version,
+            "buildNumber": version_instance.build_number,
+            "forceToUpdate": version_instance.force_to_update,
+            "removeCacheOnUpdate": version_instance.remove_cache_on_update,
+            "removeDataOnUpdate": version_instance.remove_data_on_update,
+            "removeCacheAndDataOnUpdate": version_instance.remove_cache_and_data_on_update,
+            "downloadLink": version_instance.main_file.url if version_instance.main_file else None,
+            "downloadLinkList": [
+                {
+                    "architecture": "x86_64",
+                    "link": version_instance.x86_64_file.url if version_instance.x86_64_file else None
+                },
+                {
+                    "architecture": "armeabi-v7a",
+                    "link": version_instance.armeabi_v7a_file.url if version_instance.armeabi_v7a_file else None
+                },
+                {
+                    "architecture": "arm64-v8a",
+                    "link": version_instance.arm64_v8a_file.url if version_instance.arm64_v8a_file else None
+                }
+            ]
+        }
+        return Response({"success": True, "result": data}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"success": True, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -29,3 +29,4 @@ def app_info(request):
             ]
         }
     return Response({"success": True, "result": data}, status=status.HTTP_200_OK)
+
