@@ -60,19 +60,19 @@ def app_info(request):
             "removeCacheOnUpdate": version_instance.remove_cache_on_update,
             "removeDataOnUpdate": version_instance.remove_data_on_update,
             "removeCacheAndDataOnUpdate": version_instance.remove_cache_and_data_on_update,
-            "downloadLink": version_instance.main_file.url if version_instance.main_file else None,
+            "downloadLink": request.build_absolute_uri(version_instance.main_file.url) if version_instance.main_file else None,
             "downloadLinkList": [
                 {
                     "architecture": "x86_64",
-                    "link": version_instance.x86_64_file.url if version_instance.x86_64_file else None
+                    "link": request.build_absolute_uri(version_instance.x86_64_file.url) if version_instance.x86_64_file else None
                 },
                 {
                     "architecture": "armeabi-v7a",
-                    "link": version_instance.armeabi_v7a_file.url if version_instance.armeabi_v7a_file else None
+                    "link": request.build_absolute_uri(version_instance.armeabi_v7a_file.url) if version_instance.armeabi_v7a_file else None
                 },
                 {
                     "architecture": "arm64-v8a",
-                    "link": version_instance.arm64_v8a_file.url if version_instance.arm64_v8a_file else None
+                    "link": request.build_absolute_uri(version_instance.arm64_v8a_file.url) if version_instance.arm64_v8a_file else None
                 }
             ]
         }
