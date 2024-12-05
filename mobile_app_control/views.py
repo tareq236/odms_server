@@ -4,6 +4,13 @@ from .models import MobileAppVersion
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from . import constants
+import importlib
+import json
+
+
+def reload_constants():
+    importlib.reload(constants)
 
 def str_to_bool(value):
     return value in ['true', 'True', '1', 'on']
@@ -80,3 +87,37 @@ def app_info(request):
 
     except Exception as e:
         return Response({"success": True, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['GET'])
+def app_error_info(request):
+    if request.method == 'GET':
+        if constants.APP_ERROR_INFO['push_error']:
+            return Response({"success": False, "message": constants.APP_ERROR_INFO['error_message'], "code": constants.APP_ERROR_INFO['error_code']}, status=status.HTTP_423_LOCKED)
+        return Response({"success": True}, status=status.HTTP_200_OK)
+    
+
+def update_constants_file(data):
+    constants_file = "./mobile_app_control/constants.py"
+    try:
+        json_string = json.dumps(data, indent=4)
+        json_string = json_string.replace("true", "True").replace("false", "False")
+        with open(constants_file, "w") as file:
+            file.write(f"# constants.py\n\nAPP_ERROR_INFO = {json_string}\n")
+        print("File written successfully")
+    except Exception as e:
+        print(f"Error writing to constants.py: {e}")
+
+
+def update_app_error(request):
+    if request.method == "POST":
+        password = "rdl@odms@Rdl#impala"
+        user_password = request.POST.get('password')
+        if user_password != password:
+            return JsonResponse({"error": "Invalid password"})
+        constants.APP_ERROR_INFO["push_error"] = request.POST.get("push_error") == "true"
+        constants.APP_ERROR_INFO["error_code"] = request.POST.get("error_code", constants.APP_ERROR_INFO["error_code"])
+        constants.APP_ERROR_INFO["error_message"] = request.POST.get("error_message", constants.APP_ERROR_INFO["error_message"])
+        update_constants_file(constants.APP_ERROR_INFO)
+        reload_constants()
+        return JsonResponse({"message": "Updated successfully!"})
+    return render(request, "app_error_info.html", {"error_data": constants.APP_ERROR_INFO})
