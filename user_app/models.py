@@ -57,6 +57,7 @@ class UsersList(models.Model):
     user_type = models.CharField(max_length=20,choices=UserType.choices,null=True, blank=True)
     user_designation = models.CharField(max_length=55,null=True ,blank=True)
     user_depot = models.CharField(max_length=155,null=True ,blank=True)
+    depot_code = models.CharField(max_length=55,null=True ,blank=True)
     user_job_location = models.CharField(max_length=155,null=True ,blank=True)
     password = models.CharField(max_length=55,null=False)
     class StatusType(models.IntegerChoices):
