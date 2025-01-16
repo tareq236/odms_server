@@ -1,7 +1,7 @@
 from django.forms import model_to_dict
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-from user_app.models import UserList, AdminUserList
+from user_app.models import UserList, AdminUserList, UsersList
 from user_app.serializers import *
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -13,14 +13,14 @@ from django.db.models import Q
 
 def user_login_details(sap_id):
     try:
-        return UserList.objects.get(sap_id=sap_id)
-    except UserList.DoesNotExist:
+        return UsersList.objects.get(sap_id=sap_id)
+    except UsersList.DoesNotExist:
         return None
     
 def user_login_check(sap_id,password):
     try:
-        return UserList.objects.get(sap_id=sap_id,password=password)
-    except UserList.DoesNotExist:
+        return UsersList.objects.get(sap_id=sap_id,password=password)
+    except UsersList.DoesNotExist:
         return None
 
 def user_admin_login_check(user_name,password):
@@ -38,7 +38,7 @@ def get_start_work_details(sap_id):
 @api_view(['GET'])
 def user_list(request):
     if request.method == 'GET':
-        user_list = UserList.objects.all()
+        user_list = UsersList.objects.all()
         if user_list.exists():
             serializer = UserDetailsSerializer(user_list, many=True)
             return Response({"success": True, "result": serializer.data}, status=status.HTTP_200_OK)
@@ -118,8 +118,8 @@ def admin_user_list(request):
                     elif search_type == 'equals':
                         query &= Q(**{f'{key}': value})
 
-            get_data = UserList.objects.filter(query).order_by('sap_id')[offset:offset+limit]
-            total_row = UserList.objects.filter(query).count()
+            get_data = UsersList.objects.filter(query).order_by('sap_id')[offset:offset+limit]
+            total_row = UsersList.objects.filter(query).count()
 
             if not get_data:
                 return JsonResponse({'success': False, 'message': 'Data not found'})
@@ -132,7 +132,7 @@ def admin_user_list(request):
 def admin_insert_user(request):
     if request.method == 'POST':
         try:
-            insert_data = UserList.objects.create(**request.data)
+            insert_data = UsersList.objects.create(**request.data)
             return JsonResponse({'success': True, 'result': model_to_dict(insert_data)})
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
@@ -142,8 +142,8 @@ def admin_update_user(request):
     if request.method == 'POST':
         try:
             _id = request.data.get('id')
-            get_data = UserList.objects.get(id=_id)
-            print(_id)
+            get_data = UsersList.objects.get(id=_id)
+            # print(_id)
             for key, value in request.data.items():
                 setattr(get_data, key, value)
             get_data.save()
@@ -156,7 +156,7 @@ def admin_delete_user(request):
     if request.method == 'POST':
         try:
             _id = request.data.get('del_id')
-            get_data = UserList.objects.get(id=_id)
+            get_data = UsersList.objects.get(id=_id)
             get_data.delete()
             return JsonResponse({'success': True, 'result': 'Deleted successfully'})
         except Exception as e:

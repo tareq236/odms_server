@@ -48,7 +48,7 @@ def overdue_list(request,da_code):
         FROM 
             rdl_delivery d
         LEFT JOIN rpl_customer c ON d.partner=c.partner
-        LEFT JOIN rdl_user_list ul ON d.da_code=ul.sap_id
+        LEFT JOIN rdl_users_list ul ON d.da_code=ul.sap_id
         LEFT JOIN rdl_delivery_list dl ON d.id = dl.delivery_id
         LEFT JOIN rdl_customer_location cl ON d.partner=cl.customer_id
         INNER JOIN rpl_material m ON dl.matnr=m.matnr
@@ -139,7 +139,7 @@ def collect_overdue(request):
         cash_collection = Decimal(str(data.get('cash_collection', '0')))
         cash_collection_latitude=data.get('cash_collection_latitude')
         cash_collection_longitude=data.get('cash_collection_longitude')
-        print(cash_collection,billing_doc_no,da_code)
+        # print(cash_collection,billing_doc_no,da_code)
         try:
             delivery = DeliveryModel.objects.get(billing_doc_no=billing_doc_no)
         except DeliveryModel.DoesNotExist:

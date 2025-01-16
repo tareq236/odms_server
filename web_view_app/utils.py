@@ -6,7 +6,7 @@ from django.db import connection
 def get_da_info(da_code):
     query = '''
         SELECT ul.full_name, CURRENT_DATE AS billing_date
-        FROM rdl_user_list ul 
+        FROM rdl_users_list ul 
         WHERE ul.sap_id=%s;
     '''
     with connection.cursor() as cursor:
@@ -86,9 +86,9 @@ def get_sap_data(da_code):
             # "billing_doc_list": result["billing_doc_list"].split(',') if result["billing_doc_list"] else [],
             # "net_val_list": result["net_val_list"].split(',') if result["net_val_list"] else []
         }
-    print(da_info)
-    print(total_data)
-    print(sap_data)
+    # print(da_info)
+    # print(total_data)
+    # print(sap_data)
     return {
         "da_info": da_info,
         "total_data": total_data,

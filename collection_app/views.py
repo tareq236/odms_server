@@ -367,6 +367,6 @@ def cash_collection_save(request, pk):
         serializer.update(delivery, serializer.validated_data)
         
         return Response({"success": True, "result": serializer.data}, status=status.HTTP_200_OK)
-    print(serializer.errors)
+    # print(serializer.errors)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

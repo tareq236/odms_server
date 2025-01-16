@@ -103,7 +103,7 @@ def update_constants_file(data):
         json_string = json_string.replace("true", "True").replace("false", "False")
         with open(constants_file, "w") as file:
             file.write(f"# constants.py\n\nAPP_ERROR_INFO = {json_string}\n")
-        print("File written successfully")
+        # print("File written successfully")
     except Exception as e:
         print(f"Error writing to constants.py: {e}")
 
