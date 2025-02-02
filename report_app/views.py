@@ -97,3 +97,34 @@ def dashboard_info(request,sap_id):
             'total_customer':total_customer
         }
         return Response({"success":True,"result":response_data},status=status.HTTP_200_OK)
+    
+@api_view(['GET'])
+def dashboard_info_v2(request, sap_id):
+    if request.method == 'GET':
+        sql="""
+        SELECT dis.route, dr.route_name, dr.depot_code, dr.depot_name, 
+        COUNT(DISTINCT sis.gate_pass_no) total_gate_pass, 
+        SUM(sis.net_val + sis.vat) total_gate_pass_amount, 
+        COUNT(DISTINCT sis.partner) total_customer
+        FROM rdl_delivery_info_sap dis
+        INNER JOIN rpl_sales_info_sap sis ON dis.billing_doc_no = sis.billing_doc_no
+        LEFT JOIN rdl_route_wise_depot dr ON dis.route = dr.route_code
+        WHERE dis.da_code = %s AND dis.billing_date = CURRENT_DATE
+        GROUP BY dis.route, dr.route_name, dr.depot_code, dr.depot_name;
+        """
+        results=execute_raw_query(sql,[sap_id])
+        total_gate_pass=0
+        total_gate_pass_amount=0.0
+        total_customer=0
+        for result in results:
+            total_gate_pass+=result[4]
+            total_gate_pass_amount+=float(result[5])
+            total_customer+=result[6]
+        data={
+            'total_gate_pass': total_gate_pass,
+            'total_gate_pass_amount': total_gate_pass_amount,
+            'total_customer': total_customer,
+            'routes': results
+        }
+        return Response({"success": True, "data": data}, status=status.HTTP_200_OK)
+    return Response({"success":False, "message":"Method not allowed"}, status=status.HTTP_400_BAD_REQUEST)
