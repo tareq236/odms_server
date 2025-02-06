@@ -65,6 +65,62 @@ def dashboard_report(request,sap_id):
             'time_interval': time_interval,
             'distance': distance
         }]}, status=status.HTTP_200_OK)
+        
+@api_view(['GET'])
+def dashboard_report_v2(request, sap_id):
+    if request.method == 'GET':
+        query_1 ="""
+            SELECT COUNT(DISTINCT dis.billing_doc_no)
+            FROM rdl_delivery_info_sap dis 
+            INNER JOIN rpl_sales_info_sap sis ON dis.billing_doc_no = sis.billing_doc_no
+            INNER JOIN rpl_customer c ON sis.partner = c.partner
+            WHERE dis.billing_date = CURRENT_DATE AND dis.da_code=%s;
+        """
+        total_delivery_result = execute_raw_query(query_1,[sap_id])
+        total_delivery = total_delivery_result[0][0] if total_delivery_result else 0
+        
+        query_2 = """
+            SELECT d.billing_doc_no, d.delivery_status, d.cash_collection_status, d.return_status
+            FROM rdl_delivery d 
+            WHERE d.billing_date = CURRENT_DATE AND d.da_code = %s;
+        """
+        delivery_list = execute_raw_query(query_2,[sap_id])
+        delivery_done = 0
+        delivery_remaining = 0
+        cash_collection =0
+        cash_collection_remaining = 0
+        return_invoice = 0
+        
+        for result in delivery_list:
+            if result[1] == 'Done':
+                delivery_done += 1
+            if result[2] == 'Done':
+                cash_collection += 1
+            if result[3] == 1:
+                return_invoice += 1
+                
+        delivery_remaining = total_delivery - delivery_done
+        cash_collection_remaining = delivery_done - cash_collection
+        time_interval=1*60*1000 #millisecond
+        distance=10 #meter
+        
+        data = [{
+            'delivery_remaining': delivery_remaining,
+            'delivery_done': delivery_done,
+            'cash_remaining': cash_collection_remaining,
+            'cash_done': cash_collection,
+            'sap_id': sap_id,
+            # 'total_gate_pass_amount': result[0][4],
+            # 'total_collection_amount': result[0][5], 
+            # 'total_return_amount': result[0][6], 
+            'total_return_quantity': return_invoice,
+            # 'due_amount_total': result[0][8],
+            # 'previous_day_due': 0,
+            'time_interval': time_interval,
+            'distance': distance
+        }]
+        
+        return Response({"success": True, "result": data}, status=status.HTTP_200_OK)
     
 @api_view(['GET'])
 def dashboard_info(request,sap_id):
