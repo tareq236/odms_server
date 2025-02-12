@@ -35,23 +35,34 @@ def execute_raw_query(query, params=None):
 @api_view(['POST'])
 def delivery_save(request):
     if request.method == 'POST':
+        """
+        Get inital data and introduce necessary variables
+        """
         tz_Dhaka = pytz.timezone('Asia/Dhaka')
         productList = []
         net_val=0.0
         total_return_amount=0.0
         billing_date = request.data['billing_date']
         da_code = request.data ['da_code']
-        cache_key = f'{billing_date}_{da_code}_delivery-info'
-        cached_data = r.get(cache_key)
-
-            
-        update_keys = dict()
-        billing_doc_no = request.data['billing_doc_no']
-        query_billing_doc_no = billing_doc_no
         delivery_latitude = request.data['delivery_latitude']
         delivery_longitude = request.data['delivery_longitude']
+        billing_doc_no = request.data['billing_doc_no']
+        query_billing_doc_no = billing_doc_no
         
+        """
+        Generate cache key and get cached value
+        """
+        cache_key = f'{billing_date}_{da_code}_delivery-info'
+        cached_data = r.get(cache_key)
         
+        """
+        Generate cache update keys that are necessary for updating.
+        """    
+        update_keys = dict()
+        
+        """
+        "Process data to save it in the database." 
+        """
         for item in request.data['deliverys']:
             unit_vat=item["vat"]/item["quantity"]
             unit_price=item["net_val"]/item["quantity"]
@@ -62,7 +73,9 @@ def delivery_save(request):
             net_val=round(net_val+round(unit_price_with_vat*quantity,2),2)
             total_return_amount=round(total_return_amount+return_amount,2)
             
-            # generate update keys
+            """
+            Generate update keys and assign necessary informations.
+            """
             key=f'{billing_doc_no}{item['matnr']}{item['batch']}'
             update_keys[key] = {
                 "delivery_latitude":delivery_latitude,
@@ -86,10 +99,12 @@ def delivery_save(request):
                 "delivery_quantity": item["delivery_quantity"],
                 "return_quantity": item["return_quantity"],
                 "delivery_net_val": delivery_amount,
-                "return_net_val": return_amount,
-                
+                "return_net_val": return_amount,    
             })
             
+            """
+            If return quantity is found, save it in database.
+            """
             
             if item["return_quantity"]:
                 CreateReturnList(
@@ -107,7 +122,10 @@ def delivery_save(request):
                 )
             else:
                 continue
-
+        
+        """
+        Process main data to database.
+        """
         return_status=DeliveryModel.ReturnStatus.v0
         if total_return_amount>0.0:
             return_status=DeliveryModel.ReturnStatus.v1
@@ -134,6 +152,9 @@ def delivery_save(request):
             "deliverys": productList,
         }
 
+        """
+        If serializer is valid, save data and update cache if cache found.
+        """
         serializer = DeliverySerializer(data=main_data, partial=True)
         if serializer.is_valid():
             if request.data.get('type') == "delivery":
@@ -144,14 +165,18 @@ def delivery_save(request):
                 serializer.validated_data['return_date_time'] = datetime.now(tz_Dhaka)
             instance = serializer.save()
 
-            
+            """
+            Get delivery id and delivery list id.
+            """
             saved_delivery_id = instance.id
             saved_list_id = dict()
             for item in instance.deliverys.all():
                 key = f"{item.matnr}{item.batch}"
                 saved_list_id[key] = item.id
             
-
+            """
+            Update cache data if cache found.
+            """
             if cached_data:
                 print('cache hit')
                 data_list = json.loads(cached_data)
@@ -181,6 +206,5 @@ def delivery_save(request):
             return Response({"success": True, "result":'sucess'}, status=status.HTTP_200_OK)
 
         else:
-            print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
