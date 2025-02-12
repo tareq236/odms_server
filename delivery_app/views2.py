@@ -37,7 +37,6 @@ def delivery_save(request):
     if request.method == 'POST':
         tz_Dhaka = pytz.timezone('Asia/Dhaka')
         productList = []
-        # print("data requested", request.data)
         net_val=0.0
         total_return_amount=0.0
         billing_date = request.data['billing_date']
@@ -46,7 +45,6 @@ def delivery_save(request):
         cached_data = r.get(cache_key)
 
             
-        # print(serializer.errors)
         update_keys = dict()
         billing_doc_no = request.data['billing_doc_no']
         query_billing_doc_no = billing_doc_no
@@ -63,7 +61,6 @@ def delivery_save(request):
             quantity=item["quantity"]
             net_val=round(net_val+round(unit_price_with_vat*quantity,2),2)
             total_return_amount=round(total_return_amount+return_amount,2)
-            # print("test....",net_val, total_return_amount)
             
             # generate update keys
             key=f'{billing_doc_no}{item['matnr']}{item['batch']}'
@@ -110,13 +107,11 @@ def delivery_save(request):
                 )
             else:
                 continue
-                # print('no return quantity')
-        # return Response({"success": True,"message":"success"},status=status.HTTP_200_OK)
+
         return_status=DeliveryModel.ReturnStatus.v0
         if total_return_amount>0.0:
             return_status=DeliveryModel.ReturnStatus.v1
         total_due_amount=round(net_val-total_return_amount,2)
-        # print("testing.......",total_due_amount,net_val)
         main_data = {
             "billing_date": request.data['billing_date'],
             "billing_doc_no": request.data['billing_doc_no'],
@@ -148,10 +143,7 @@ def delivery_save(request):
             if request.data.get('type') == "return":
                 serializer.validated_data['return_date_time'] = datetime.now(tz_Dhaka)
             instance = serializer.save()
-            print(instance.id)
-            delivery_item_ids = list(instance.deliverys.values_list('id', flat=True))
-            print(delivery_item_ids)
-            print(f"================== Data Saved ===============")
+
             
             saved_delivery_id = instance.id
             saved_list_id = dict()
@@ -159,24 +151,11 @@ def delivery_save(request):
                 key = f"{item.matnr}{item.batch}"
                 saved_list_id[key] = item.id
             
-            print("=================================")
-            print(saved_delivery_id)
-            print(saved_list_id)
-            print("=============================")
+
             if cached_data:
                 print('cache hit')
                 data_list = json.loads(cached_data)
-                # print(f"Executing query with billing_doc_no: {query_billing_doc_no}")
 
-                # sql ="""
-                #     SELECT d.id, dl.id as list_id
-                #     FROM rdl_delivery d 
-                #     INNER JOIN rdl_delivery_list dl ON d.id = dl.delivery_id
-                #     where d.billing_doc_no = %s;
-                # """
-                # results=execute_raw_query(sql, [query_billing_doc_no])
-                # delivery_id = results[0][0]
-                # delivery_list_id = results[0][1]
                 for data in data_list:
                     key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
                     billing_doc_no = data["billing_doc_no"]
@@ -196,7 +175,7 @@ def delivery_save(request):
                             data["return_amount"] = update_keys[key]["return_net_val"]
                         if update_keys[key]["return_quantity"]:
                             data["return_status"] =1
-                # r.set(data_list)
+
                 json_data=json.dumps(data_list,default=custom_serializer)
                 r.set(cache_key,json_data, ex=36000) #  10 hour timeout
             return Response({"success": True, "result":'sucess'}, status=status.HTTP_200_OK)
