@@ -1,19 +1,19 @@
+import pytz
+import redis 
+import json
+import decimal
 from operator import itemgetter
+from itertools import groupby
+from datetime import date, datetime
+from django.db import connection
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
 from delivery_app.models import DeliveryInfoModel
 from delivery_app.serializers import DeliverySerializer
-from itertools import groupby
-from datetime import date, datetime
-import pytz
 from collection_app.utils import CreateReturnList
 from collection_app.models import ReturnListModel
 from .models import DeliveryModel
-import redis 
-import json
-import decimal
-from django.db import connection
 
 # Redis connection
 redis_pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
