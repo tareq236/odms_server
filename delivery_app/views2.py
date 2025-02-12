@@ -202,7 +202,7 @@ def delivery_save(request):
                             data["return_status"] =1
 
                 json_data=json.dumps(data_list,default=custom_serializer)
-                r.set(cache_key,json_data, ex=36000) #  10 hour timeout
+                r.set(cache_key,json_data)
             return Response({"success": True, "result":'sucess'}, status=status.HTTP_200_OK)
 
         else:
