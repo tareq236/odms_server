@@ -1,25 +1,25 @@
+import pytz
 import decimal
+import redis
+import json
+from decimal import Decimal
+from collections import defaultdict
+from itertools import groupby
+from datetime import date as sys_date
 from operator import itemgetter
+from datetime import datetime,timedelta, date
 from django.shortcuts import render
+from django.db import connection
+from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
-from itertools import groupby
-import pytz
 from delivery_app.models import DeliveryInfoModel, DeliveryModel,DeliveryListModel
 from delivery_app.serializers import DeliverySerializer
-from datetime import datetime,timedelta, date
-from django.db import connection
-from django.utils import timezone
 from .models import PaymentHistory, ReturnListModel
-from decimal import Decimal
 from . import utils
 from .constants import tz_Dhaka
 
-import redis
-import json
-from datetime import date as sys_date
-from collections import defaultdict
 
 # Redis connection
 redis_pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
@@ -40,6 +40,9 @@ def execute_raw_query(query, params=None):
 
 @api_view(['PUT'])
 def cash_collection_save(request, pk):
+    """
+     Get delivery object.
+    """
     try:
         delivery = DeliveryModel.objects.get(pk=pk)
     except DeliveryModel.DoesNotExist:
@@ -47,6 +50,10 @@ def cash_collection_save(request, pk):
 
     tz_Dhaka = pytz.timezone('Asia/Dhaka')
     serializer = DeliverySerializer(delivery, data=request.data, partial=True)
+    
+    """
+    If serializer is valid, process data to update.
+    """
     if serializer.is_valid():
         sql = "SELECT sis.matnr,sis.batch,sis.vat,sis.quantity,sis.net_val,sis.tp FROM rpl_sales_info_sap sis WHERE sis.billing_doc_no = %s;"
         billing_doc_no = request.data.get('billing_doc_no')
@@ -54,12 +61,16 @@ def cash_collection_save(request, pk):
         data=dict()
         total_net_val=0.00
         
-        """ For Cashing"""
+        """ 
+        Generate keys and process data for updating cache.
+        """
         billing_date=request.data.get('billing_date')
         da_code=request.data.get('da_code')
         cache_key = f'{billing_date}_{da_code}_delivery-info'
         update_keys = dict()
-        
+        """
+        Process matrial information.
+        """
         for result in results:
             matnr,batch,vat,quantity,net_val=result[0],result[1],float(result[2]),float(result[3]),float(result[4])
             total_net_val = total_net_val + vat + net_val
@@ -109,7 +120,9 @@ def cash_collection_save(request, pk):
                         record.delivery_net_val-=Decimal(data[key]["unit_total"]*new_quantity)
                         record.save()
                         
-                        # print(new_quantity)
+                        """
+                        If new return product found save it in return list.
+                        """
                         if new_quantity>0:
                             utils.CreateReturnList(
                                 matnr=matnr,
@@ -127,7 +140,9 @@ def cash_collection_save(request, pk):
                            
                     except DeliveryListModel.DoesNotExist:
                         return Response({"success":False,"message":"matnr does not found"},status=status.HTTP_200_OK)
-                    
+                """
+                Generate update cache key and process data for cache update.
+                """   
                 update_key = f'{billing_doc_no}{matnr}{batch}'
                 update_keys[update_key] = {
                     "return_quantity": return_quantity,
@@ -136,18 +151,21 @@ def cash_collection_save(request, pk):
                     "cash_collection":cash_collection,
                     "unit_total":unit_total,
                     "new_return_net_val": float(unit_total * new_quantity)
-                }
-                    
-                    
-                    
+                }       
 
+            """
+            Calculate return amount and due amount.
+            """
             if return_amount>0.00:
                 serializer.validated_data['return_status']=1
             serializer.validated_data['return_amount']=return_amount
             due = total_net_val - float(cash_collection)-return_amount
             serializer.validated_data['due_amount']=round(due, 2);
-            serializer.validated_data['cash_collection_date_time'] = datetime.now(tz_Dhaka)
-            # Create Payment History Object
+            serializer.validated_data['cash_collection_date_time'] = datetime.now(tz_Dhaka)            
+            
+            """
+            Create payment history object.
+            """
             utils.CreatePaymentHistoryObject(
                 billing_doc_no = billing_doc_no,
                 partner = delivery.partner,
@@ -158,6 +176,9 @@ def cash_collection_save(request, pk):
                 cash_collection_latitude = request.data.get('cash_collection_latitude', None),cash_collection_longitude = request.data.get('cash_collection_latitude', None)
                 )
 
+            """
+            Get cache data. If cache found update cache data.
+            """
             cache_data = r.get(cache_key)
             if cache_data:
                 data_list = json.loads(cache_data)
@@ -174,13 +195,10 @@ def cash_collection_save(request, pk):
                         data["return_amount"] += update_keys[key]["return_net_val"]
                         if update_keys[key]["return_quantity"]:
                             data["return_status"] = 1
-                        print("update keys found .......................")
-                        print('key is',key)
                             
                 json_data = json.dumps(data_list, default=custom_serializer)
-                r.set(cache_key, json_data, ex=36000)
-                # print("cache updated")
-                # print(json_data)
+                r.set(cache_key, json_data)
+
         
         elif request.data.get('type') == "return":
             serializer.validated_data['return_date_time'] = datetime.now(tz_Dhaka)
@@ -188,6 +206,6 @@ def cash_collection_save(request, pk):
         serializer.update(delivery, serializer.validated_data)
         
         return Response({"success": True, "result": serializer.data}, status=status.HTTP_200_OK)
-    # print(serializer.errors)
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
