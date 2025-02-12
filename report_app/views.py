@@ -83,7 +83,6 @@ def dashboard_report_v2(request, sap_id):
         cached_data = r.get(cache_key)
         
         if cached_data:
-            print('result form cached data')
             remaining_set= set()
             delivered_set= set()
             cash_collection_set= set()
@@ -114,7 +113,6 @@ def dashboard_report_v2(request, sap_id):
                 'time_interval': time_interval,
                 'distance': distance
             }]
-            print(data)
             
             return Response({"success": True, "result": data}, status=status.HTTP_200_OK)
         else:
