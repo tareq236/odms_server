@@ -83,7 +83,6 @@ def dashboard_report_v2(request, sap_id):
         cached_data = r.get(cache_key)
         
         if cached_data:
-            print('result form cached data')
             remaining_set= set()
             delivered_set= set()
             cash_collection_set= set()
@@ -114,7 +113,6 @@ def dashboard_report_v2(request, sap_id):
                 'time_interval': time_interval,
                 'distance': distance
             }]
-            print(data)
             
             return Response({"success": True, "result": data}, status=status.HTTP_200_OK)
         else:
@@ -173,10 +171,11 @@ def dashboard_report_v2(request, sap_id):
 def dashboard_info(request,sap_id):
     if request.method == 'GET':   
         sap_query="""
-            SELECT COUNT(DISTINCT sis.gate_pass_no) total_gate_pass,SUM(sis.net_val+vat) total_gate_pass_amount,COUNT(DISTINCT sis.partner) total_customer, dis.route, rs.description 
+            SELECT COUNT(DISTINCT sis.gate_pass_no) total_gate_pass,SUM(sis.net_val+ sis.vat) total_gate_pass_amount,COUNT(DISTINCT sis.partner) total_customer, GROUP_CONCAT(DISTINCT dis.route ORDER BY dis.route ASC SEPARATOR ', ') AS routes, GROUP_CONCAT(DISTINCT r.route_name ORDER BY dis.route ASC SEPARATOR ' || ') AS route_name 
             FROM rdl_delivery_info_sap dis 
-            INNER JOIN rpl_sales_info_sap sis ON dis.billing_doc_no=sis.billing_doc_no
-            INNER JOIN rdl_route_sap rs ON dis.route=rs.route
+            INNER JOIN rpl_sales_info_sap sis ON dis.billing_doc_no=sis.billing_doc_no 
+            INNER JOIN rpl_customer c ON sis.partner=c.partner
+            LEFT JOIN rdl_route_wise_depot r ON dis.route = r.route_code
             WHERE dis.da_code=%s AND dis.billing_date=CURRENT_DATE;
         """
         result=execute_raw_query(sap_query,[sap_id])
