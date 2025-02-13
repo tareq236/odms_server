@@ -182,7 +182,7 @@ def delivery_save(request):
                 data_list = json.loads(cached_data)
 
                 for data in data_list:
-                    key = f"{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}"
+                    key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
                     billing_doc_no = data["billing_doc_no"]
                     list_key = f"{data['matnr']}{data['batch']}"
                     if key in update_keys:
