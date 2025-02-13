@@ -76,7 +76,7 @@ def delivery_save(request):
             """
             Generate update keys and assign necessary informations.
             """
-            key=f'{billing_doc_no}{item['matnr']}{item['batch']}'
+            key=f"{billing_doc_no}{item['matnr']}{item['batch']}"
             update_keys[key] = {
                 "delivery_latitude":delivery_latitude,
                 "delivery_longitude":delivery_longitude,
@@ -182,11 +182,10 @@ def delivery_save(request):
                 data_list = json.loads(cached_data)
 
                 for data in data_list:
-                    key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
+                    key = f"{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}"
                     billing_doc_no = data["billing_doc_no"]
-                    list_key = f'{data['matnr']}{data['batch']}'
+                    list_key = f"{data['matnr']}{data['batch']}"
                     if key in update_keys:
-                        print(list_key)
                         data["id"] = saved_delivery_id
                         data["list_id"] = saved_list_id[list_key]
                         data["delivery_status"] = "Done"
