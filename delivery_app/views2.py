@@ -176,6 +176,8 @@ def delivery_save(request):
             if request.data.get('type') == "return":
                 serializer.validated_data['return_date_time'] = datetime.now(tz_Dhaka)
             instance = serializer.save()
+            
+            logging.info(f"delivery saved for {da_code} - {request.data['billing_doc_no']}")
 
             """
             Get delivery id and delivery list id.
