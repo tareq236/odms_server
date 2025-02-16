@@ -201,6 +201,7 @@ def delivery_save(request):
                         billing_doc_no = data["billing_doc_no"]
                         list_key = f"{data['matnr']}{data['batch']}"
                         if key in update_keys:
+                            logging.info(f'update cache key {key}')
                             data["id"] = saved_delivery_id
                             data["list_id"] = saved_list_id[list_key]
                             data["delivery_status"] = "Done"
