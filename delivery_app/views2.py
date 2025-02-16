@@ -224,7 +224,7 @@ def delivery_save(request):
                     
                         r.set(cache_key,json_data)
                         logging.info(f"cache updated for {da_code} - {billing_doc_no} - {cache_key}")
-                        logging.info(json_data)
+                        # logging.info(json_data)
                         logging.info("==================> End <=======================")
                     except Exception as e:
                         logging.info(f"update cache error for {da_code} - {billing_doc_no}, error type: cache save error, message: {e}")
