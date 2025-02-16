@@ -215,8 +215,9 @@ def delivery_save(request):
                                 data["return_amount"] = update_keys[key]["return_net_val"]
                             if update_keys[key]["return_quantity"]:
                                 data["return_status"] =1
-
+                    
                     json_data=json.dumps(data_list,default=custom_serializer)
+                    billing_doc_no = request.data['billing_doc_no']
                     try:
                         r.set(cache_key,json_data)
                         logging.info(f"cache updated for {da_code} - {billing_doc_no}")
@@ -229,6 +230,6 @@ def delivery_save(request):
             return Response({"success": True, "result":'sucess'}, status=status.HTTP_200_OK)
 
         else:
-            logging.info(f"save error for {da_code}, error type: serializer error, message: {serializer.errors} - {billing_doc_no}")
+            logging.info(f"save error for {da_code}, error type: serializer error, message: {serializer.errors} - {request.data['billing_doc_no']}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
