@@ -216,16 +216,16 @@ def delivery_save(request):
                     json_data=json.dumps(data_list,default=custom_serializer)
                     try:
                         r.set(cache_key,json_data)
-                        logging.info(f"updated cache for {da_code}")
+                        logging.info(f"cache updated for {da_code} - {billing_doc_no}")
                     except Exception as e:
-                        logging.info(f"update cache error for {da_code}, error type: cache save error, message: {e}")
+                        logging.info(f"update cache error for {da_code} - {billing_doc_no}, error type: cache save error, message: {e}")
                 else:
-                    logging.info(f"cache not found for {da_code}")
+                    logging.info(f"cache not found for {da_code} - {billing_doc_no}")
             except Exception as e:
-                logging.info(f"update cache error for {da_code}, error type: cache error, message: {e}")
+                logging.info(f"update cache error for {da_code} - {billing_doc_no}, error type: cache error, message: {e}")
             return Response({"success": True, "result":'sucess'}, status=status.HTTP_200_OK)
 
         else:
-            logging.info(f"save error for {da_code}, error type: serializer error, message: {serializer.errors}")
+            logging.info(f"save error for {da_code}, error type: serializer error, message: {serializer.errors} - {billing_doc_no}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
