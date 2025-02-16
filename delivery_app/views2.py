@@ -1,7 +1,9 @@
+import os
 import pytz
 import redis 
 import json
 import decimal
+import logging
 from operator import itemgetter
 from itertools import groupby
 from datetime import date, datetime
@@ -18,6 +20,16 @@ from .models import DeliveryModel
 # Redis connection
 redis_pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
 r = redis.Redis(connection_pool=redis_pool)
+
+# Set up logger to log in the same directory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+log_file_path = os.path.join(script_dir,'delivery_save.txt')
+logging.basicConfig(
+    filename=log_file_path,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 def custom_serializer(obj):
     if isinstance(obj, date):
@@ -168,42 +180,52 @@ def delivery_save(request):
             """
             Get delivery id and delivery list id.
             """
-            saved_delivery_id = instance.id
-            saved_list_id = dict()
-            for item in instance.deliverys.all():
-                key = f"{item.matnr}{item.batch}"
-                saved_list_id[key] = item.id
-            
-            """
-            Update cache data if cache found.
-            """
-            if cached_data:
-                print('cache hit')
-                data_list = json.loads(cached_data)
+            try:
+                saved_delivery_id = instance.id
+                saved_list_id = dict()
+                for item in instance.deliverys.all():
+                    key = f"{item.matnr}{item.batch}"
+                    saved_list_id[key] = item.id
+                
+                """
+                Update cache data if cache found.
+                """
+                if cached_data:
+                    print('cache hit')
+                    data_list = json.loads(cached_data)
 
-                for data in data_list:
-                    key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
-                    billing_doc_no = data["billing_doc_no"]
-                    list_key = f"{data['matnr']}{data['batch']}"
-                    if key in update_keys:
-                        data["id"] = saved_delivery_id
-                        data["list_id"] = saved_list_id[list_key]
-                        data["delivery_status"] = "Done"
-                        data["delivery_quantity"] = update_keys[key]["delivery_quantity"]
-                        data["delivery_net_val"] = update_keys[key]["delivery_net_val"]
-                        data["return_quantity"] = update_keys[key]["return_quantity"]
-                        data["return_net_val"] = update_keys[key]["return_net_val"]
-                        if data["return_amount"]:
-                            data["return_amount"] += update_keys[key]["return_net_val"]
-                        else:
-                            data["return_amount"] = update_keys[key]["return_net_val"]
-                        if update_keys[key]["return_quantity"]:
-                            data["return_status"] =1
+                    for data in data_list:
+                        key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
+                        billing_doc_no = data["billing_doc_no"]
+                        list_key = f"{data['matnr']}{data['batch']}"
+                        if key in update_keys:
+                            data["id"] = saved_delivery_id
+                            data["list_id"] = saved_list_id[list_key]
+                            data["delivery_status"] = "Done"
+                            data["delivery_quantity"] = update_keys[key]["delivery_quantity"]
+                            data["delivery_net_val"] = update_keys[key]["delivery_net_val"]
+                            data["return_quantity"] = update_keys[key]["return_quantity"]
+                            data["return_net_val"] = update_keys[key]["return_net_val"]
+                            if data["return_amount"]:
+                                data["return_amount"] += update_keys[key]["return_net_val"]
+                            else:
+                                data["return_amount"] = update_keys[key]["return_net_val"]
+                            if update_keys[key]["return_quantity"]:
+                                data["return_status"] =1
 
-                json_data=json.dumps(data_list,default=custom_serializer)
-                r.set(cache_key,json_data)
+                    json_data=json.dumps(data_list,default=custom_serializer)
+                    try:
+                        r.set(cache_key,json_data)
+                        logging.info(f"updated cache for {da_code}")
+                    except Exception as e:
+                        logging.info(f"update cache error for {da_code}, error type: cache save error, message: {e}")
+                else:
+                    logging.info(f"cache not found for {da_code}")
+            except Exception as e:
+                logging.info(f"update cache error for {da_code}, error type: cache error, message: {e}")
             return Response({"success": True, "result":'sucess'}, status=status.HTTP_200_OK)
 
         else:
+            logging.info(f"save error for {da_code}, error type: serializer error, message: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
