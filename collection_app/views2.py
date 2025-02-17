@@ -181,6 +181,9 @@ def cash_collection_save(request, pk):
             Get cache data. If cache found update cache data.
             """
             update_cache_data = r.get(update_cache_key)
+            if not update_cache_data:
+                utils.update_delivery_info_cache(request.data["da_code"])
+            update_cache_data = r.get(update_cache_key)
             update_cache_json_data = json.loads(update_cache_data)
             
             for data in update_cache_json_data:
