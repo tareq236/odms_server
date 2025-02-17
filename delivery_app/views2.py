@@ -61,7 +61,7 @@ def delivery_save(request):
         Generate cache update keys that are necessary for updating.
         """    
         update_keys = dict()
-        
+        update_items_list = []
         """
         "Process data to save it in the database." 
         """
@@ -75,19 +75,22 @@ def delivery_save(request):
             net_val=round(net_val+round(unit_price_with_vat*quantity,2),2)
             total_return_amount=round(total_return_amount+return_amount,2)
             
+            
             """
             Generate update keys and assign necessary informations.
             """
             key=f"{billing_doc_no}{item['matnr']}{item['batch']}"
-            update_keys[key] = {
-                "delivery_latitude":delivery_latitude,
-                "delivery_longitude":delivery_longitude,
+            update_items_list.append({
+                "matnr": item['matnr'],
+                "batch":item['batch'],
+                "delivery_status": "Done",
+                "cash_collection_status": "Pending",
+                "cash_collection":0.0,
                 "delivery_quantity":item['delivery_quantity'],
                 "delivery_net_val":delivery_amount,
                 "return_quantity":item['return_quantity'],
-                "return_net_val":return_amount,
-                "delivery_status": "Done",
-            }
+                "return_net_val":return_amount,    
+            })
             
             
             productList.append({
@@ -178,38 +181,80 @@ def delivery_save(request):
                 saved_list_id[key] = item.id
             
             """
+            update **.update-delivery-info.** cach.
+            """
+            update_cache_key = f"{billing_date}_{da_code}_update-delivery-info"
+            update_cache_data = r.get(update_cache_key)
+            
+            if update_cache_data:
+                print('update_cache_data found!')
+                update_cache_list_data = json.loads(update_cache_data)
+            else:
+                print('update cache data not found!')
+                update_cache_list_data = []
+            return_status = 1 if total_return_amount >0.00 else 0
+            for item in update_items_list:
+                list_key = f"{item['matnr']}{item['batch']}"
+                new_data = {
+                    "id": saved_delivery_id,
+                    "billing_doc_no":request.data["billing_doc_no"],
+                    "billing_date": request.data["billing_date"],
+                    "da_code": request.data["da_code"],
+                    "delivery_status": "Done",
+                    "delivered_amount": net_val,
+                    "cash_collection_status": "Pending",
+                    "cash_collection":0.00,
+                    "return_status":return_status,
+                    "return_amount": total_return_amount,
+                    "list_id": saved_list_id[list_key],
+                    "matnr":item["matnr"],
+                    "batch":item["batch"],
+                    "delivery_quantity":item["delivery_quantity"],
+                    "delivery_net_val":item["delivery_net_val"],
+                    "return_quantity":item["return_quantity"],
+                    "return_net_val": item["return_net_val"]    
+                }
+                update_cache_list_data.append(new_data)
+            
+            # save cache
+            json_data=json.dumps(update_cache_list_data,default=custom_serializer)
+            r.set(update_cache_key,json_data)
+            
+            
+            """
             Update cache data if cache found.
             """
-            if cached_data:
-                print('cache hit')
+            # if cached_data:
+            #     print('cache hit')
                 
-                data_list = json.loads(cached_data)
+            #     data_list = json.loads(cached_data)
 
-                for data in data_list:
-                    key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
-                    billing_doc_no = data["billing_doc_no"]
-                    list_key = f"{data['matnr']}{data['batch']}"
-                    if key in update_keys:
-                        data["id"] = saved_delivery_id
-                        data["list_id"] = saved_list_id[list_key]
-                        data["delivery_status"] = "Done"
-                        data["delivery_quantity"] = update_keys[key]["delivery_quantity"]
-                        data["delivery_net_val"] = update_keys[key]["delivery_net_val"]
-                        data["return_quantity"] = update_keys[key]["return_quantity"]
-                        data["return_net_val"] = update_keys[key]["return_net_val"]
-                        if data["return_amount"]:
-                            data["return_amount"] += update_keys[key]["return_net_val"]
-                        else:
-                            data["return_amount"] = update_keys[key]["return_net_val"]
-                        if update_keys[key]["return_quantity"]:
-                            data["return_status"] =1
+            #     for data in data_list:
+            #         key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
+            #         billing_doc_no = data["billing_doc_no"]
+            #         list_key = f"{data['matnr']}{data['batch']}"
+            #         if key in update_keys:
+            #             data["id"] = saved_delivery_id
+            #             data["list_id"] = saved_list_id[list_key]
+            #             data["delivery_status"] = "Done"
+            #             data["delivery_quantity"] = update_keys[key]["delivery_quantity"]
+            #             data["delivery_net_val"] = update_keys[key]["delivery_net_val"]
+            #             data["return_quantity"] = update_keys[key]["return_quantity"]
+            #             data["return_net_val"] = update_keys[key]["return_net_val"]
+            #             if data["return_amount"]:
+            #                 data["return_amount"] += update_keys[key]["return_net_val"]
+            #             else:
+            #                 data["return_amount"] = update_keys[key]["return_net_val"]
+            #             if update_keys[key]["return_quantity"]:
+            #                 data["return_status"] =1
                 
-                json_data=json.dumps(data_list,default=custom_serializer)
-                billing_doc_no = request.data['billing_doc_no']
-                r.set(cache_key,json_data)
+            #     json_data=json.dumps(data_list,default=custom_serializer)
+            #     billing_doc_no = request.data['billing_doc_no']
+            #     r.set(cache_key,json_data)
 
             return Response({"success": True, "result":'sucess'}, status=status.HTTP_200_OK)
 
         else:
+            print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
