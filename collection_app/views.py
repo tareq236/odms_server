@@ -52,6 +52,7 @@ def cash_collection_list_v2(request,sap_id):
             update_cache_data_dict = dict()
             if not update_cache_data:
                 update_delivery_info_cache(sap_id)
+            update_cache_data = r.get(update_cache_key)
             if update_cache_data:
                 update_cache_json_data = json.loads(update_cache_data)
                 for item in update_cache_json_data:
