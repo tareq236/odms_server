@@ -67,6 +67,7 @@ def cash_collection_save(request, pk):
         billing_date=request.data.get('billing_date')
         da_code=request.data.get('da_code')
         cache_key = f'{billing_date}_{da_code}_delivery-info'
+        update_cache_key = f'{billing_date}_{da_code}_update-delivery-info'
         update_keys = dict()
         """
         Process matrial information.
@@ -179,25 +180,45 @@ def cash_collection_save(request, pk):
             """
             Get cache data. If cache found update cache data.
             """
-            cache_data = r.get(cache_key)
-            if cache_data:
-                data_list = json.loads(cache_data)
-                for data in data_list:
-                    key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
+            update_cache_data = r.get(update_cache_key)
+            update_cache_json_data = json.loads(update_cache_data)
+            
+            for data in update_cache_json_data:
+                key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
+                if key in update_keys:
+                    data["cash_collection_status"] = "Done"
+                    data["return_quantity"] = update_keys[key]["return_quantity"]
+                    data["return_net_val"] = update_keys[key]["return_net_val"]
+                    data["cash_collection"] = update_keys[key]["cash_collection"]
+                    data["delivery_quantity"] -= update_keys[key]["new_return_quantity"]
+                    data["delivered_amount"] -= update_keys[key]["new_return_net_val"]
+                    data["return_amount"] += update_keys[key]["return_net_val"]
+                    if update_keys[key]["return_quantity"]:
+                        data["return_status"] = 1
+            
+            new_json_data = json.dumps(update_cache_json_data,default=custom_serializer)
+            r.set(update_cache_key,new_json_data)
+            
+            
+            # cache_data = r.get(cache_key)
+            # if cache_data:
+            #     data_list = json.loads(cache_data)
+            #     for data in data_list:
+            #         key = f'{data["billing_doc_no"]}{data["matnr"]}{data["batch"]}'
                     
-                    if key in update_keys:
-                        data["cash_collection_status"] = "Done"
-                        data["return_quantity"] = update_keys[key]["return_quantity"]
-                        data["return_net_val"] = update_keys[key]["return_net_val"]
-                        data["cash_collection"] = update_keys[key]["cash_collection"]
-                        data["delivery_quantity"] -= update_keys[key]["new_return_quantity"]
-                        data["delivery_net_val"] -= update_keys[key]["new_return_net_val"]
-                        data["return_amount"] += update_keys[key]["return_net_val"]
-                        if update_keys[key]["return_quantity"]:
-                            data["return_status"] = 1
+            #         if key in update_keys:
+            #             data["cash_collection_status"] = "Done"
+            #             data["return_quantity"] = update_keys[key]["return_quantity"]
+            #             data["return_net_val"] = update_keys[key]["return_net_val"]
+            #             data["cash_collection"] = update_keys[key]["cash_collection"]
+            #             data["delivery_quantity"] -= update_keys[key]["new_return_quantity"]
+            #             data["delivery_net_val"] -= update_keys[key]["new_return_net_val"]
+            #             data["return_amount"] += update_keys[key]["return_net_val"]
+            #             if update_keys[key]["return_quantity"]:
+            #                 data["return_status"] = 1
                             
-                json_data = json.dumps(data_list, default=custom_serializer)
-                r.set(cache_key, json_data)
+            #     json_data = json.dumps(data_list, default=custom_serializer)
+            #     r.set(cache_key, json_data)
 
         
         elif request.data.get('type') == "return":
