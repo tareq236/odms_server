@@ -50,7 +50,7 @@ def delivery_list(request,sap_id):
                     item['delivery_quantity'] = updated_data['delivery_quantity']
                     item['delivered_amount'] = updated_data['delivered_amount']
                     item['cash_collection_status'] = updated_data['cash_collection_status']
-                    item['cash_collecton'] = updated_data['cash_collecton']
+                    item['cash_collection'] = updated_data['cash_collection']
                     item['return_status'] = updated_data['return_status']
                     item['return_amount'] = updated_data['return_amount']
                     item['delivery_quantity'] = updated_data['delivery_quantity']
