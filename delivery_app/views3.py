@@ -8,6 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
 from delivery_app.models import DeliveryInfoModel
+from collection_app.utils import update_delivery_info_cache
 
 # Redis connection
 redis_pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
@@ -33,6 +34,10 @@ def delivery_list(request,sap_id):
             delivery_done_list = []
             delivery_remaining_list = []
             update_cache_data_dict = dict()
+            if not update_cache_data:
+                update_delivery_info_cache(sap_id)
+            update_cache_data= r.get(update_cache_key)
+                
             if update_cache_data:
                 print("updated_cache_found")
                 update_cache_json_data = json.loads(update_cache_data)
