@@ -40,18 +40,60 @@ def cash_collection_list_v2(request,sap_id):
         billing_date = date or current_date
         # Generate Redis key
         cache_key = f"{billing_date}_{sap_id}_delivery-info"
+        update_cache_key = f"{billing_date}_{sap_id}_update-delivery-info"
         # Check if data is in cache
         cached_data = r.get(cache_key)
+        update_cache_data = r.get(update_cache_key)
         if cached_data:
             print("Cache hit")
             json_data = json.loads(cached_data)
+            
+            update_cache_data_dict = dict()
+            if update_cache_data:
+                update_cache_json_data = json.loads(update_cache_data)
+                for item in update_cache_json_data:
+                    update_cache_dict_key = f'{item["billing_doc_no"]}-{item["matnr"]}-{item["batch"]}'
+                    update_cache_data_dict[update_cache_dict_key] = item
+            
+            collection_remaining_list = []
+            collection_done_list = []
+            return_list = []
+            for item in json_data:
+                item_key = f'{item["billing_doc_no"]}-{item["matnr"]}-{item["batch"]}'
+                if item_key in update_cache_data_dict:
+                    updated_data = update_cache_data_dict[item_key]
+                    item['id'] = updated_data['id']
+                    item['list_id'] = updated_data['list_id']
+                    item['delivery_status'] = updated_data['delivery_status']
+                    item['delivery_quantity'] = updated_data['delivery_quantity']
+                    item['delivered_amount'] = updated_data['delivered_amount']
+                    item['cash_collection_status'] = updated_data['cash_collection_status']
+                    item['cash_collection'] = updated_data['cash_collection']
+                    item['return_status'] = updated_data['return_status']
+                    item['return_amount'] = updated_data['return_amount']
+                    item['delivery_quantity'] = updated_data['delivery_quantity']
+                    item['delivery_net_val'] = updated_data['delivery_net_val']
+                    item['return_quantity'] = updated_data['return_quantity']
+                    item['return_net_val'] = updated_data['return_net_val']
+                    
+                    if updated_data["cash_collection_status"] == "Pending":
+                        collection_remaining_list.append(item) 
+                    elif updated_data["cash_collection_status"] == "Done":
+                        collection_done_list.append(item) 
+                    if updated_data["return_status"] == 1:
+                        return_list.append(item)
+                    
+            
+            
+            
+            
             # print(json_data)
             if d_type == "Done":
-                data_list = [item for item in json_data if item.get("delivery_status") == "Done" and item.get("cash_collection_status") == "Done"]
+                data_list = collection_done_list
             elif d_type == "Remaining":
-                data_list = [item for item in json_data if item.get("delivery_status") == "Done" and item.get("cash_collection_status")== "Pending"]
+                data_list = collection_remaining_list
             elif d_type == "Return":
-                data_list = [item for item in json_data if item.get("delivery_status") == "Done" and item.get("return_status") == 1 ]
+                data_list = return_list
             
             print(d_type)
             # print(data_list)
