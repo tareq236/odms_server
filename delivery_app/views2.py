@@ -12,7 +12,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from delivery_app.models import DeliveryInfoModel
 from delivery_app.serializers import DeliverySerializer
-from collection_app.utils import CreateReturnList
+from collection_app.utils import CreateReturnList, update_delivery_info_cache
 from collection_app.models import ReturnListModel
 from .models import DeliveryModel
 
@@ -185,7 +185,9 @@ def delivery_save(request):
             """
             update_cache_key = f"{billing_date}_{da_code}_update-delivery-info"
             update_cache_data = r.get(update_cache_key)
-            
+            if not update_cache_data:
+                update_delivery_info_cache(request.data["da_code"])
+            update_cache_data = r.get(update_cache_key)
             if update_cache_data:
                 print('update_cache_data found!')
                 update_cache_list_data = json.loads(update_cache_data)
