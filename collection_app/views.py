@@ -15,6 +15,7 @@ from .models import PaymentHistory, ReturnListModel
 from decimal import Decimal
 from . import utils
 from .constants import tz_Dhaka
+from .utils import update_delivery_info_cache
 
 import redis
 import json
@@ -49,6 +50,8 @@ def cash_collection_list_v2(request,sap_id):
             json_data = json.loads(cached_data)
             
             update_cache_data_dict = dict()
+            if not update_cache_data:
+                update_delivery_info_cache(sap_id)
             if update_cache_data:
                 update_cache_json_data = json.loads(update_cache_data)
                 for item in update_cache_json_data:
