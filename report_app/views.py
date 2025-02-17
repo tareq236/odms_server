@@ -81,6 +81,8 @@ def dashboard_report_v2(request, sap_id):
         
         cache_key = f"{sys_date.today()}_{sap_id}_delivery-info"
         cached_data = r.get(cache_key)
+        update_cache_key = f"{sys_date.today()}_{sap_id}_update-delivery-info"
+        update_cache_data = r.get(update_cache_key)
         
         if cached_data:
             remaining_set= set()
@@ -88,26 +90,40 @@ def dashboard_report_v2(request, sap_id):
             cash_collection_set= set()
             return_set = set()
             data_dict = json.loads(cached_data.decode('utf-8'))
+            # for item in data_dict:
+            #     billing_doc_no = item['billing_doc_no']
+            #     if item["delivery_status"] == "Done":
+            #         delivered_set.add(billing_doc_no)    
+            #     if item["delivery_status"] == "Pending":
+            #         remaining_set.add(billing_doc_no)
+            #     if item["cash_collection_status"] == "Done":
+            #         cash_collection_set.add(billing_doc_no)
+            #     if item["return_status"] == 1:
+            #         return_set.add(billing_doc_no)
+            total = set()
+            done = set()
+            collection = set()
+            return_ = set()
             for item in data_dict:
-                billing_doc_no = item['billing_doc_no']
-                if item["delivery_status"] == "Done":
-                    delivered_set.add(billing_doc_no)    
-                if item["delivery_status"] == "Pending":
-                    remaining_set.add(billing_doc_no)
-                if item["cash_collection_status"] == "Done":
-                    cash_collection_set.add(billing_doc_no)
-                if item["return_status"] == 1:
-                    return_set.add(billing_doc_no)
+                total.add(item['billing_doc_no'])
+            if update_cache_data:
+                update_cache_json_data = json.loads(update_cache_data.decode('utf-8'))
+                for item in update_cache_json_data:
+                    done.add(item['billing_doc_no'])
+                    if item["cash_collection_status"] == "Done":
+                        collection.add(item['billing_doc_no'])
+                    if item["return_status"] == 1:
+                        return_.add(item['billing_doc_no'])
             data = [{
-                'delivery_remaining': len(remaining_set),
-                'delivery_done': len(delivered_set),
-                'cash_remaining': len(delivered_set) - len(cash_collection_set),
-                'cash_done': len(cash_collection_set),
+                'delivery_remaining': len(total)-len(done),
+                'delivery_done': len(done),
+                'cash_remaining': len(done) - len(collection),
+                'cash_done': len(collection),
                 'sap_id': sap_id,
                 # 'total_gate_pass_amount': result[0][4],
                 # 'total_collection_amount': result[0][5], 
                 # 'total_return_amount': result[0][6], 
-                'total_return_quantity':  len(return_set),
+                'total_return_quantity':  len(return_),
                 # 'due_amount_total': result[0][8],
                 # 'previous_day_due': 0,
                 'time_interval': time_interval,
