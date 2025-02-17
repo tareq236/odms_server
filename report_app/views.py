@@ -8,6 +8,7 @@ from collection_app.utils import get_da_route
 import redis
 import json 
 from datetime import date as sys_date
+from decimal import Decimal
 
 # Redis connection
 redis_pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
@@ -106,6 +107,7 @@ def dashboard_report_v2(request, sap_id):
             return_ = set()
             for item in data_dict:
                 total.add(item['billing_doc_no'])
+                
             if update_cache_data:
                 update_cache_json_data = json.loads(update_cache_data.decode('utf-8'))
                 for item in update_cache_json_data:
@@ -114,6 +116,59 @@ def dashboard_report_v2(request, sap_id):
                         collection.add(item['billing_doc_no'])
                     if item["return_status"] == 1:
                         return_.add(item['billing_doc_no'])
+            else:
+                query = """
+                    SELECT 
+                        d.id, 
+                        d.billing_doc_no, 
+                        d.billing_date, 
+                        d.da_code, 
+                        d.delivery_status, 
+                        IF(d.cash_collection_status IS NULL, 'Pending', d.cash_collection_status) AS cash_collection_status, 
+                        d.return_status, 
+                        d.net_val AS delivered_amount, 
+                        d.cash_collection, 
+                        d.return_amount, 
+                        d.due_amount,
+                        dl.id AS list_id,
+                        dl.matnr,
+                        dl.batch,
+                        dl.quantity,
+                        dl.net_val ,
+                        dl.vat,
+                        dl.delivery_quantity,
+                        dl.delivery_net_val,
+                        dl.return_quantity,
+                        dl.return_net_val
+                    FROM rdl_delivery d 
+                    INNER JOIN rdl_delivery_list dl ON d.id = dl.delivery_id
+                    WHERE billing_date = CURRENT_DATE AND da_code = %s;
+                """
+                print('sap id is: ',sap_id)
+                with connection.cursor() as cursor:
+                    cursor.execute(query, [sap_id]) 
+                    results = cursor.fetchall()
+                    column_names = [desc[0] for desc in cursor.description] 
+ 
+                data_dict = [dict(zip(column_names, row)) for row in results]
+                def custom_serializer(obj):
+                    if isinstance(obj, sys_date):
+                        return obj.isoformat()  # Convert date to string (YYYY-MM-DD format)
+                    if isinstance(obj, Decimal):
+                        return float(obj)
+                    return obj
+
+                json_data=json.dumps(data_dict,default=custom_serializer)
+                r.set(update_cache_key, json_data)
+                
+                for data in data_dict:
+                    done.add(data['billing_doc_no'])
+                    if data["cash_collection_status"] == "Done":
+                        collection.add(data['billing_doc_no'])
+                    if data["return_status"] == 1:
+                        return_.add(data['billing_doc_no'])
+                print("cache data updated successfully")
+                                            
             data = [{
                 'delivery_remaining': len(total)-len(done),
                 'delivery_done': len(done),
