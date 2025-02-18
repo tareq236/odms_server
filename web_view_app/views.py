@@ -3,7 +3,8 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
-
+from django.db import connection
+from datetime import timedelta
 
 def reports(request,da_code):
     return render(request, "reports.html",{"da_code":da_code})
@@ -71,3 +72,52 @@ def admin_dashboard_manual(request):
 
 def dashboard_manual(request):
     return render(request, "dashboard_manual.html")
+
+
+def transportation_summary(request, da_code):
+    query = """
+    SELECT 
+        DATE_FORMAT(cv.start_journey_date_time, '%H:%i') AS start_time,
+        DATE_FORMAT(cv.end_journey_date_time, '%H:%i') AS end_time,
+        cv.transport_cost,
+        cv.transport_mode
+    FROM rdl_conveyance cv
+    WHERE cv.da_code = %s 
+        AND DATE(cv.start_journey_date_time) = CURRENT_DATE 
+        AND cv.journey_status = 'end';
+    """
+    
+    with connection.cursor() as cursor:
+        cursor.execute(query, [da_code])
+        results = cursor.fetchall()
+    
+    transportation = []
+    total_cost = 0.00 
+    total_duration = timedelta() 
+    for result in results:
+        start_time = result[0]
+        end_time = result[1]
+        transport_cost = float(result[2])
+        transport_mode = result[3]
+        
+        time_diff = end_time - start_time
+        hour, remaineder= divmod(time_diff.total_seconds(), 3600)
+        minutes, _ = divmod(remaineder, 60)
+        duration = f"{int(hour)} hour {int(minutes)} minutes"
+        
+        total_cost += float(transport_cost)
+        total_duration += time_diff
+        
+        transportation.append({
+            "start_time": start_time,
+            "end_time": end_time,
+            "duration": duration,
+            "transport_cost": transport_cost,
+            "transport_mode": transport_mode
+        })
+    
+    total_hours, remaineder = divmod(total_hours.total_seconds(),3600)
+    total_minutes, _ = divmod(remaineder, 60)
+    total_duration = f"{int(total_hours)} hour {int(total_minutes)} minutes"
+        
+    return render(request,"transportation_summary.html")
