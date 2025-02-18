@@ -293,11 +293,23 @@ def dashboard_info_v2(request, sap_id):
             total_gate_pass+=result[4]
             total_gate_pass_amount+=float(result[5])
             total_customer+=result[6]
+        routes=[]
+        for result in results:
+            route_code = result[0]
+            route={
+                "route": result[0],
+                "route_name": result[1],
+                # "depot_code": result[2],
+                # "depot_name": result[3],
+                # "total_gate_pass": result[4],
+                # "total_gate_pass_amount": result[5],
+            }
+            routes.append(route)
         data={
             'total_gate_pass': total_gate_pass,
             'total_gate_pass_amount': total_gate_pass_amount,
             'total_customer': total_customer,
-            'routes': results
+            'routes': routes
         }
         return Response({"success": True, "data": data}, status=status.HTTP_200_OK)
     return Response({"success":False, "message":"Method not allowed"}, status=status.HTTP_400_BAD_REQUEST)
