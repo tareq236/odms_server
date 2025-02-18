@@ -95,7 +95,8 @@ def cash_collection_save(request, pk):
             cash_collection = request.data.get('cash_collection')
             delivery_items=request.data.get('deliverys',[])
             return_amount=0.00
-            
+            new_return_amount = 0.00
+            new_return_quantity = 0
             for items in delivery_items:
                 matnr=str(items['id'])
                 batch=items['batch']
@@ -114,6 +115,8 @@ def cash_collection_save(request, pk):
                         # calculate new return quantity
                         old_quantity=float(record.return_quantity)
                         new_quantity=return_quantity-old_quantity
+                        new_return_quantity += new_quantity
+                        new_return_amount += float(data[key]["unit_total"]*new_quantity)
                         # update record
                         record.return_quantity=return_quantity
                         record.return_net_val = data[key]["unit_total"]*return_quantity
@@ -151,7 +154,7 @@ def cash_collection_save(request, pk):
                     "return_net_val": data[key]["unit_total"]*return_quantity,
                     "cash_collection":cash_collection,
                     "unit_total":unit_total,
-                    "new_return_net_val": float(unit_total * new_quantity)
+                    "new_return_net_val": float(round(unit_total * new_quantity,2))
                 }       
 
             """
@@ -194,9 +197,9 @@ def cash_collection_save(request, pk):
                     data["return_net_val"] = update_keys[key]["return_net_val"]
                     data["cash_collection"] = update_keys[key]["cash_collection"]
                     data["delivery_quantity"] -= update_keys[key]["new_return_quantity"]
-                    data["delivered_amount"] -= update_keys[key]["new_return_net_val"]
-                    data["return_amount"] += update_keys[key]["return_net_val"]
-                    if update_keys[key]["return_quantity"]:
+                    data["delivery_net_val"] -= update_keys[key]["new_return_net_val"]
+                    data["return_amount"] = return_amount
+                    if return_amount > 0.00:
                         data["return_status"] = 1
             
             new_json_data = json.dumps(update_cache_json_data,default=custom_serializer)
