@@ -11,6 +11,6 @@ urlpatterns = [
     path('return_list/v2/<int:da_code>', views.product_return_list_v2, name='return_list_v2'),
     path('dashboard_manual', views.admin_dashboard_manual, name='dashboard_manual'),
     path('manual', views.dashboard_manual, name='manual'),
-    path('transportation/<int:da_code>', views.transportation_summary2, name='transportation_summary'),
+    path('transportation/<int:da_code>', views.transportation_summary, name='transportation_summary'),
     path('transport_pdf/<int:da_code>', views.transportation_summary_pdf, name='transport_pdf'),
 ]
