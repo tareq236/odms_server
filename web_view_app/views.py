@@ -1,4 +1,4 @@
-from .utils import get_main_data,get_product_return_list,get_due_amount_list,get_product_return_list2
+from .utils import get_main_data,get_product_return_list,get_due_amount_list,get_product_return_list2, get_da_info
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -83,7 +83,7 @@ def transportation_summary(request, da_code):
         cv.transport_mode
     FROM rdl_conveyance cv
     WHERE cv.da_code = %s 
-        AND DATE(cv.start_journey_date_time) = CURRENT_DATE 
+        AND DATE(cv.start_journey_date_time) = '2025-02-17' 
         AND cv.journey_status = 'end';
     """
     
@@ -119,5 +119,22 @@ def transportation_summary(request, da_code):
     total_hours, remaineder = divmod(total_hours.total_seconds(),3600)
     total_minutes, _ = divmod(remaineder, 60)
     total_duration = f"{int(total_hours)} hour {int(total_minutes)} minutes"
+    
+    da = get_da_info(da_code)
+    da_info={
+        "da_code": da_code,
+        "da_name": da[0][0],
+        "billing_date": da[0][1]
+    }
+    
+    total_transport = {
+        "total_hours": total_hours,
+        "total_minutes": total_minutes,
+        "total_duration": total_duration,
+        "total_cost": total_cost,
+    }
         
-    return render(request,"transportation_summary.html")
+    return render(request,"transportation_summary.html" , {
+        "transportation": transportation,
+        "da_info": da_info,
+        "total_transport": total_transport})
