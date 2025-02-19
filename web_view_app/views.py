@@ -159,7 +159,7 @@ def transportation_summary_pdf(request, da_code):
     }, "transportation_summary.pdf")
 
 
-def transportation_summary2(request, da_code):
+def transportation_summary(request, da_code):
     query = """
     SELECT 
         cv.start_journey_date_time,
