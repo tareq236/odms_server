@@ -134,7 +134,7 @@ def transportation_summary_pdf(request, da_code):
     
         
     if total_hours:
-        total_duration_str = f"2{int(total_hours)} hour 2{int(total_minutes)} min 2{int(total_seconds)} sec"
+        total_duration_str = f"{int(total_hours)} hour {int(total_minutes)} min {int(total_seconds)} sec"
     elif total_minutes:
         total_duration_str = f"{int(total_minutes)} min {int(total_seconds)} sec"
     else:
