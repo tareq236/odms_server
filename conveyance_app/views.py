@@ -1,10 +1,8 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import ConveyanceModel
-from .models import TransportModeModel
-from .serializers import ConveyanceSerializer
-from .serializers import TransportModeSerializer
+from .models import ConveyanceModel, TransportModeModel
+from .serializers import ConveyanceSerializer, TransportModeSerializer, DaMovementInfoSerializer
 from django.utils import timezone
 from django.db.models import Q
 
@@ -72,3 +70,13 @@ class EndJourneyView(APIView):
 
         serializer = ConveyanceSerializer(conveyance)
         return Response({"success": True, "result": serializer.data}, status=status.HTTP_200_OK)
+    
+    
+class DaMovementInfoView(APIView):
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        serializer = DaMovementInfoSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True, "result": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"success": False, "message": serializer.errors}, status=status.HTTP_200_OK)
