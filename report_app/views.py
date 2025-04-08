@@ -56,7 +56,7 @@ def dashboard_report(request,sap_id):
         result = execute_raw_query(sql,[sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route])
         
         time_interval=1*60*1000 #millisecond
-        distance=10 #meter
+        distance=0 #meter
 
         return Response({"success": True, "result": [{
             'delivery_remaining': result[0][0]-result[0][1],
@@ -78,7 +78,7 @@ def dashboard_report(request,sap_id):
 def dashboard_report_v2(request, sap_id):
     if request.method == 'GET':
         time_interval=1*60*1000 #millisecond
-        distance=10 #meter
+        distance=0 #meter
         
         cache_key = f"{sys_date.today()}_{sap_id}_delivery-info"
         cached_data = r.get(cache_key)
