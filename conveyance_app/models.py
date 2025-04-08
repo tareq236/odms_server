@@ -44,3 +44,20 @@ class TransportModeModel(models.Model):
         db_table = "rdl_transport_mode_list"
         verbose_name = "TransportMode"
         verbose_name_plural = "TransportMode"
+        
+        
+class DaMovementInfo(models.Model):
+    id = models.AutoField(primary_key=True)
+    da_code = models.CharField(max_length=50)
+    mv_date = models.DateField()
+    time_duration = models.IntegerField()
+    distance = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.da_code
+    
+    class Meta:
+        db_table = "rdl_da_movement_info"
+        verbose_name = "DaMovementInfo"
+        verbose_name_plural = "DaMovementInfo"
