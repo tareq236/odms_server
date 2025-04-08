@@ -66,6 +66,8 @@ class EndJourneyView(APIView):
         conveyance.transport_mode = data.get('transport_mode')
         conveyance.transport_cost = data.get('transport_cost')
         conveyance.journey_status = 'end'
+        conveyance.time_duration = data.get('time_duration')
+        conveyance.distance = data.get('distance')
         conveyance.save()
 
         serializer = ConveyanceSerializer(conveyance)
