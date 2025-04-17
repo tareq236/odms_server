@@ -5,6 +5,8 @@ from .models import ConveyanceModel, TransportModeModel
 from .serializers import ConveyanceSerializer, TransportModeSerializer, DaMovementInfoSerializer
 from django.utils import timezone
 from django.db.models import Q
+from django.db import connections
+import pytz
 
 class TransportModeListView(APIView):
     def get(self, request, *args, **kwargs):
@@ -57,6 +59,53 @@ class EndJourneyView(APIView):
         except ConveyanceModel.DoesNotExist:
             return Response({"success": False, "message": "Journey not found"}, status=status.HTTP_200_OK)
         
+        dhaka_tz = pytz.timezone('Asia/Dhaka')
+        user_id = conveyance.da_code
+        mv_date = conveyance.start_journey_date_time.date()
+        start_time = conveyance.start_journey_date_time.time().strftime('%H:%M:%S')
+        end_time = timezone.now().astimezone(dhaka_tz).time().strftime('%H:%M:%S')
+        
+        with connections['postgres'].cursor() as cursor:
+            cursor.execute("""
+                WITH MovementData AS (
+                    SELECT 
+                        user_id,
+                        mv_date,
+                        geo_location,
+                        mv_time,
+                        LEAD(geo_location) OVER (PARTITION BY user_id, mv_date ORDER BY mv_time) AS next_geo_location,
+                        LEAD(mv_time) OVER (PARTITION BY user_id, mv_date ORDER BY mv_time) AS next_mv_time
+                    FROM user_movement
+                    WHERE user_id = %s 
+                        AND mv_date = %s 
+                        AND mv_time >= %s  
+                        AND mv_time <= %s
+                ),
+                Distances AS (
+                    SELECT 
+                        user_id,
+                        mv_date,
+                        mv_time,
+                        next_mv_time,
+                        ST_Distance(geo_location, next_geo_location) AS distance,
+                        EXTRACT(EPOCH FROM (next_mv_time - mv_time)) / 60 AS duration_minutes
+                    FROM MovementData
+                    WHERE next_geo_location IS NOT NULL AND next_mv_time IS NOT NULL
+                )
+                SELECT 
+                    user_id,
+                    mv_date,
+                    SUM(distance) / 1000 AS total_distance_km,
+                    SUM(duration_minutes) AS total_time_minutes
+                FROM Distances
+                GROUP BY user_id, mv_date;
+            """, [str(user_id), str(mv_date), str(start_time), str(end_time)])
+
+            result = cursor.fetchone()
+        total_distance_km = result[2] if result else 0
+        total_time_minutes = result[3] if result else 0
+
+        end_time = timezone.now().astimezone(dhaka_tz)
         data = request.data
         conveyance.end_journey_latitude = data.get('end_journey_latitude')
         conveyance.end_journey_longitude = data.get('end_journey_longitude')
@@ -64,8 +113,8 @@ class EndJourneyView(APIView):
         conveyance.transport_mode = data.get('transport_mode')
         conveyance.transport_cost = data.get('transport_cost')
         conveyance.journey_status = 'end'
-        conveyance.time_duration = data.get('time_duration')
-        conveyance.distance = data.get('distance')
+        conveyance.time_duration = total_time_minutes
+        conveyance.distance = total_distance_km
         conveyance.save()
 
         serializer = ConveyanceSerializer(conveyance)
