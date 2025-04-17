@@ -55,7 +55,7 @@ def dashboard_report(request,sap_id):
                 "(SELECT SUM(d.due_amount) c FROM rdl_delivery d WHERE d.billing_date = CURRENT_DATE() AND d.da_code = '%s' AND d.route_code = %s) total_due;"     
         result = execute_raw_query(sql,[sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route,sap_id,route])
         
-        time_interval=1*60*1000 #millisecond
+        time_interval=30*1000 #millisecond
         distance=0 #meter
 
         return Response({"success": True, "result": [{
@@ -77,7 +77,7 @@ def dashboard_report(request,sap_id):
 @api_view(['GET'])
 def dashboard_report_v2(request, sap_id):
     if request.method == 'GET':
-        time_interval=1*60*1000 #millisecond
+        time_interval=30*1000 #millisecond
         distance=0 #meter
         
         cache_key = f"{sys_date.today()}_{sap_id}_delivery-info"
