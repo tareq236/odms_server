@@ -1,7 +1,16 @@
 import datetime
 import pytz
+import redis
+import json
+from django.db import connection
 from .models import PaymentHistory,ReturnListModel
 from delivery_app.models import DeliveryInfoModel
+from decimal import Decimal
+from datetime import date as sys_date
+
+# Redis connection
+redis_pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
+r = redis.Redis(connection_pool=redis_pool)
 
 
 def get_da_route(da_code):
@@ -39,3 +48,49 @@ def CreateReturnList(matnr, batch, return_quantity, return_net_val, billing_doc_
         partner=partner,
         route_code=route_code
     )
+    
+def update_delivery_info_cache(sap_id):
+    query = """
+        SELECT 
+            d.id, 
+            d.billing_doc_no, 
+            d.billing_date, 
+            d.da_code, 
+            d.delivery_status, 
+            IF(d.cash_collection_status IS NULL, 'Pending', d.cash_collection_status) AS cash_collection_status, 
+            d.return_status, 
+            d.net_val AS delivered_amount, 
+            d.cash_collection, 
+            d.return_amount, 
+            d.due_amount,
+            dl.id AS list_id,
+            dl.matnr,
+            dl.batch,
+            dl.quantity,
+            dl.net_val ,
+            dl.vat,
+            dl.delivery_quantity,
+            dl.delivery_net_val,
+            dl.return_quantity,
+            dl.return_net_val
+        FROM rdl_delivery d 
+        INNER JOIN rdl_delivery_list dl ON d.id = dl.delivery_id
+        WHERE billing_date = CURRENT_DATE AND da_code = %s;
+    """
+    print('sap id is: ',sap_id)
+    with connection.cursor() as cursor:
+        cursor.execute(query, [sap_id]) 
+        results = cursor.fetchall()
+        column_names = [desc[0] for desc in cursor.description] 
+
+    data_dict = [dict(zip(column_names, row)) for row in results]
+    def custom_serializer(obj):
+        if isinstance(obj, sys_date):
+            return obj.isoformat()  # Convert date to string (YYYY-MM-DD format)
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return obj
+
+    json_data=json.dumps(data_dict,default=custom_serializer)
+    update_cache_key = f"{sys_date.today()}_{sap_id}_update-delivery-info"
+    r.set(update_cache_key, json_data)

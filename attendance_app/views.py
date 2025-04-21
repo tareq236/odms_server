@@ -28,7 +28,10 @@ def attendance_start_work(request):
         tz_Dhaka = pytz.timezone('Asia/Dhaka')
         sap_id = request.data.get('sap_id')
         start_work_details = get_start_work_details(sap_id)
+        print(sap_id)
+        print(start_work_details)
         if start_work_details == None:
+            print(request.data)
             serializer = AttendanceInputSerializer(data=request.data)
             if serializer.is_valid():
                 current_time = datetime.now(tz_Dhaka)

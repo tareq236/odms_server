@@ -1,6 +1,6 @@
 import os
 from django.db import models
-from user_app.models import UserList
+from user_app.models import UsersList
 
 # lets us explicitly set upload path and filename
 def upload_to(instance, filename):
@@ -11,7 +11,7 @@ def upload_to(instance, filename):
 
 class AttendanceModel(models.Model):
     id = models.AutoField(primary_key=True)
-    sap_id = models.ForeignKey(UserList,db_column='sap_id',on_delete=models.DO_NOTHING,null=True)
+    sap_id = models.ForeignKey(UsersList,db_column='sap_id',on_delete=models.DO_NOTHING,null=True)
     start_date_time = models.DateTimeField(null=True,blank=True)
     end_date_time = models.DateTimeField(null=True,blank=True)
     late_time_min = models.IntegerField(null=True,blank=True)

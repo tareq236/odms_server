@@ -1,14 +1,14 @@
 from rest_framework import serializers
-from .models import UserList,AdminUserList
+from .models import UsersList,AdminUserList
 
 class UserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserList
+        model = UsersList
         exclude = ('password',)
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserList
+        model = UsersList
         fields = ['sap_id', 'full_name', 'mobile_number','user_type','password']
 
 class AdminUserDetailsSerializer(serializers.ModelSerializer):

@@ -1,0 +1,93 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transportation Details</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 15px;
+          background-color: #fff;
+          font-size: 13px;
+        }
+        .info {
+          padding:0px 10px;
+          background-color: #fff;
+        }
+        .table-container {
+          overflow-x: auto;
+          margin-bottom: 20px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        th,
+        td {
+          width: 20%;
+          padding: 10px 0px;
+          text-align: left;
+          border-bottom: 1px solid #ddd;
+        }
+        .no-data {
+          text-align: center;
+        }
+    </style>
+      
+</head>
+<body>
+    <div class="info">
+        <h2>ODMS Transportation Details</h2>
+        <p>DA Code : {{da_info.da_code}}</p>
+        <p>DA Name : {{ da_info.da_name }}</p>
+        <p>Date : {{da_info.billing_date}}</p>
+    </div>
+    
+    {% if transportation %}
+
+    <div class="table_container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Duration</th>
+                    <th>Cost</th>
+                    <th>Mode</th>
+                </tr>
+            </thead>
+
+            <tbody>
+              {% for transport in transportation %}
+                <tr>
+                    <td>{{transport.start_time}}</td>
+                    <td>{{transport.end_time}}</td>
+                    <td>{{transport.duration}}</td>
+                    <td>{{transport.cost}} tk</td>
+                    <td>{{transport.genre}}</td>
+                </tr>
+              {% endfor %}
+                
+                <tr>
+                    <td>Total:</td>
+                    <td></td>
+                    <td>{{total_transport.total_duration}}</td>
+                    <td>{{total_transport.total_cost}} tk</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    </div>
+    {% else %}
+    <div class="no-data">
+      <h4>No Data Found !</h4>
+    </div>
+    {% endif %}
+    
+</body>
+</html>

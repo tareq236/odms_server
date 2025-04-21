@@ -45,7 +45,7 @@ def delivery_list_v2(request,sap_id):
                 "LEFT JOIN rdl_delivery_list dl ON d.id=dl.delivery_id AND sis.matnr=dl.matnr AND sis.batch=dl.batch " \
                 "WHERE dis.da_code = '%s' "+query+" ;"
     
-    print(sql,sap_id)
+    # print(sql,sap_id)
     data_list = DeliveryInfoModel.objects.raw(sql,[sap_id])
     if len(data_list) == 0:
         return Response({"success": False, "message": "Data not available!"}, status=status.HTTP_200_OK)
@@ -239,7 +239,7 @@ def delivery_save(request):
     if request.method == 'POST':
         tz_Dhaka = pytz.timezone('Asia/Dhaka')
         productList = []
-        print("data requested", request.data)
+        # print("data requested", request.data)
         net_val=0.0
         total_return_amount=0.0
         for item in request.data['deliverys']:
@@ -251,7 +251,7 @@ def delivery_save(request):
             quantity=item["quantity"]
             net_val=round(net_val+round(unit_price_with_vat*quantity,2),2)
             total_return_amount=round(total_return_amount+return_amount,2)
-            print("test....",net_val, total_return_amount)
+            # print("test....",net_val, total_return_amount)
             productList.append({
                 "batch": item["batch"],
                 "tp": item["tp"],
@@ -283,13 +283,14 @@ def delivery_save(request):
                     route_code = request.data['route_code']
                 )
             else:
-                print('no return quantity')
+                continue
+                # print('no return quantity')
         # return Response({"success": True,"message":"success"},status=status.HTTP_200_OK)
         return_status=DeliveryModel.ReturnStatus.v0
         if total_return_amount>0.0:
             return_status=DeliveryModel.ReturnStatus.v1
         total_due_amount=round(net_val-total_return_amount,2)
-        print("testing.......",total_due_amount,net_val)
+        # print("testing.......",total_due_amount,net_val)
         main_data = {
             "billing_date": request.data['billing_date'],
             "billing_doc_no": request.data['billing_doc_no'],
@@ -322,5 +323,5 @@ def delivery_save(request):
                 serializer.validated_data['return_date_time'] = datetime.now(tz_Dhaka)
             serializer.save()
             return Response({"success": True, "result": serializer.data}, status=status.HTTP_200_OK)
-        print(serializer.errors)
+        # print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

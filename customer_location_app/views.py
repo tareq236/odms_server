@@ -47,7 +47,7 @@ def customer_details(request, partner):
 def customer_list(request,da_code):
     if request.method == 'GET':
         # Get Route
-        print(da_code)
+        # print(da_code)
         route = get_da_route(da_code)
         if not route:
             return Response({"success":True, "message":"Route not found for today"},status=status.HTTP_200_OK)
@@ -75,7 +75,7 @@ def customer_list(request,da_code):
         with connection.cursor() as cursor:
             cursor.execute(sql_query, [newRoute])
             customers = cursor.fetchall()
-        print(sql_query)
+        # print(sql_query)
         # Fetch total number of customers for pagination purposes
         total_query = "SELECT COUNT(*) FROM rpl_customer WHERE 1=1"
         if search_name:
@@ -86,7 +86,7 @@ def customer_list(request,da_code):
         with connection.cursor() as cursor:
             cursor.execute(total_query)
             total_customers = cursor.fetchone()[0]
-        print(total_query)
+        # print(total_query)
         # Convert raw SQL data to a list of dictionaries
         columns = [
             'partner', 'name1', 'name2', 'contact_person', 'street', 
