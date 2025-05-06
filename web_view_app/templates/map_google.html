@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transportation Route Map</title>
+    <style>
+        #map { height: 90vh; width: 90%; margin: auto;}
+    </style>
+</head>
+<body>
+    <h3 style="text-align:center;">Route for DA {{ da_code }} on {{ date }} ({{ start_time }} - {{ end_time }})</h3>
+    <div id="map"></div>
+
+    <script>
+        const points = {{ points|safe }};
+    
+        function initMap() {
+            if (points.length === 0) return;
+    
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 15,
+                center: points[0],
+                mapTypeId: "roadmap"
+            });
+    
+            const geocoder = new google.maps.Geocoder();
+    
+            function addMarker(point, isStart = false, isEnd = false, index = 0) {
+                const icon = isStart ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                            : isEnd ? "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                            : "http://maps.google.com/mapfiles/ms/icons/blue-dot.png";
+    
+                const marker = new google.maps.Marker({
+                    position: point,
+                    map: map,
+                    icon: icon,
+                    title: `Point ${index + 1}`
+                });
+    
+                geocoder.geocode({ location: point }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `<b>Point ${index + 1}</b><br>${results[0].formatted_address}<br>Time: ${point.time}`
+                        });
+                        marker.addListener("click", () => {
+                            infoWindow.open(map, marker);
+                        });
+                    }
+                });
+            }
+    
+            points.forEach((point, idx) => {
+                if (idx === 0 || idx === points.length - 1) {
+                    addMarker(point, idx === 0, idx === points.length - 1, idx);
+                }
+            });
+    
+            const path = new google.maps.Polyline({
+                path: points,
+                geodesic: true,
+                strokeColor: "#4285F4",
+                strokeOpacity: 0.8,
+                strokeWeight: 4
+            });
+            path.setMap(map);
+        }
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEUruYUNKg-XN-oo0jUMe57EszAXs8wc8&callback=initMap" async defer></script>
+</body>
+</html>
