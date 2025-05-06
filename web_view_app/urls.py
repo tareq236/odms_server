@@ -13,4 +13,7 @@ urlpatterns = [
     path('manual', views.dashboard_manual, name='manual'),
     path('transportation/<int:da_code>', views.transportation_summary, name='transportation_summary'),
     path('transport_pdf/<int:da_code>', views.transportation_summary_pdf, name='transport_pdf'),
+    path('ttest/<str:da_code>/<str:date>', views.transportation_postmortem, name='ttest'),
+    path('web_view/v1/google_map/<str:da_code>/<str:date>/<str:start_time>/<str:end_time>/', views.view_map_google, name='view_google_map'),
+
 ]
