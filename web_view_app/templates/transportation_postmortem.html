@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transportation Summary</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f7f7f7;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+        }
+        .badge-end {
+            background-color: #4cd137;
+        }
+        .badge-live {
+            background-color: #f1c40f;
+            color: #000;
+        }
+        .badge-auto {
+            background-color: #16a085;
+        }
+        .details-link {
+            color: #3498db;
+            text-decoration: none;
+        }
+        .details-link:hover {
+            text-decoration: underline;
+        }
+        tfoot td {
+            font-weight: bold;
+            background-color: #f7f7f7;
+        }
+    </style>
+</head>
+<body>
+    <h2>Transporation Summary for {{ da_code }} on {{ date }}</h2>
+
+    {% if travel_data %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Duration</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Distance</th>
+                <th>Cost</th>
+                <th>Status</th>
+                <th>Mode</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in travel_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.start_time }}</td>
+                <td>{{ item.end_time|default:"-" }}</td>
+                <td>{{ item.duration }}</td>
+                <td>{{ item.from_location }}</td>
+                <td>{{ item.to_location }}</td>
+                <td>{{ item.distance }} km</td>
+                <td>{{ item.cost }} tk</td>
+                <td>
+                    {% if item.status == "live" %}
+                        <span class="badge badge-live">Live</span>
+                    {% else %}
+                        <span class="badge badge-end">End</span>
+                    {% endif %}
+                </td>
+                <td><span class="badge badge-auto">{{ item.mode }}</span></td>
+                <td><a href="{% url 'view_google_map' da_code date item.start_time item.end_time %}" class="details-link">Details</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3">Total</td>
+                <td>{{ total_duration }} </td>
+                <td colspan="2"></td>
+                <td>{{ total_distance }} km</td>
+                <td>{{ total_cost }} tk</td>
+                <td colspan="3"></td>
+            </tr>
+        </tfoot>
+    </table>
+    {% else %}
+        <p>No data found.</p>
+    {% endif %}
+</body>
+</html>
