@@ -12,13 +12,13 @@ from datetime import datetime, time
 
 def get_start_work_details(sap_id):
     try:
-        return AttendanceModel.objects.raw("SELECT * FROM rdl_attendance WHERE sap_id=%s AND DATE_FORMAT(start_date_time, '%%Y-%%m-%%d') = CURDATE()",[sap_id])[0]
+        return AttendanceModel.objects.raw("SELECT * FROM rdl_attendance WHERE sap_id=%s AND DATE(start_date_time) = CURRENT_DATE",[sap_id])[0]
     except:
         return None
     
 def get_end_work_details(sap_id):
     try:
-        return AttendanceModel.objects.raw("SELECT * FROM rdl_attendance WHERE sap_id=%s AND DATE_FORMAT(end_date_time, '%%Y-%%m-%%d') = CURDATE()",[sap_id])[0]
+        return AttendanceModel.objects.raw("SELECT * FROM rdl_attendance WHERE sap_id=%s AND DATE(end_date_time) = CURRENT_DATE",[sap_id])[0]
     except:
         return None
     
