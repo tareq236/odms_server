@@ -52,9 +52,9 @@ class UsersList(models.Model):
     full_name = models.CharField(max_length=255,null=False)
     mobile_number = models.CharField(max_length=15,null=True ,blank=True)
     class UserType(models.TextChoices):
-        VALUE0 = 'Delivery Assistant', 'Delivery Assistant'
+        VALUE0 = 'Distribution Assistant', 'Distribution Assistant'
         VALUE1 = 'Driver', 'Driver'
-    user_type = models.CharField(max_length=20,choices=UserType.choices,null=True, blank=True)
+    user_type = models.CharField(max_length=55,choices=UserType.choices,null=True, blank=True)
     user_designation = models.CharField(max_length=55,null=True ,blank=True)
     user_depot = models.CharField(max_length=155,null=True ,blank=True)
     depot_code = models.CharField(max_length=55,null=True ,blank=True)
