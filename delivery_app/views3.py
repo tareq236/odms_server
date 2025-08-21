@@ -109,6 +109,7 @@ def delivery_list(request,sap_id):
                         'id': records[0]['id'],
                         'billing_doc_no': billing_doc,
                         'billing_date': billing_date,
+                        'billing_type': records[0]['billing_type'],
                         'producer_company': records[0]['producer_company'],
                         'route_code': route_code,
                         'route_name': route_name,
