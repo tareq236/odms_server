@@ -255,6 +255,7 @@ def delivery_list(request,sap_id):
                     "billing_doc_no": key_and_group[key][0].billing_doc_no,
                     "producer_company": key_and_group[key][0].producer_company,
                     "billing_date": key_and_group[key][0].billing_date,
+                    "billing_type": key_and_group[key][0].billing_type,
                     "route_code": key_and_group[key][0].route,
                     "route_name": key_and_group[key][0].route_name,
                     "da_code": key_and_group[key][0].da_code,
