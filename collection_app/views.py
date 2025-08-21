@@ -204,11 +204,13 @@ def cash_collection_list_v2(request,sap_id):
                     'gate_pass_no': gate_pass_no,
                     'invoice_list': invoice_list,  # Now properly defined
                 }
+                if not invoice_list:
+                    continue
                 main_data.append(partner_data)
             # print(main_data)
             key_func = itemgetter('billing_date', 'partner')
             sorted_data = sorted(main_data, key=key_func)
-            return Response({"success": True, "result": sorted_data}, status=status.HTTP_200_OK)
+            return Response({"success": True, "result": sorted_data,"info":"data from cache"}, status=status.HTTP_200_OK)
         
         # if cache miss
         
