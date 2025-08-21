@@ -98,6 +98,8 @@ def cash_collection_list_v2(request,sap_id):
                 data_list = collection_remaining_list
             elif d_type == "Return":
                 data_list = return_list
+            else:
+                data_list = collection_remaining_list + collection_done_list
             
             print(d_type)
             # print(data_list)
@@ -132,12 +134,16 @@ def cash_collection_list_v2(request,sap_id):
                     previous_due_amount = records[0]['previous_due_amount'] or 0.0
                     gate_pass_no = records[0]['gate_pass_no']
                     
-                    product_list = [] 
+                    product_list = []
+                    
+                    if records[0]['billing_type'].lower() in ['zd2','zd4']:
+                        continue
 
                     invoice_data = {
                         'id': records[0]['id'],
                         'billing_doc_no': billing_doc,
                         'billing_date': billing_date,
+                        'billing_type': records[0]['billing_type'],
                         'producer_company': records[0]['producer_company'],
                         'route_code': route_code,
                         'route_name': route_name,
@@ -240,7 +246,7 @@ def cash_collection_list_v2(request,sap_id):
                 "LEFT JOIN (SELECT DISTINCT customer_id, latitude, longitude FROM rdl_customer_location LIMIT 1) cl ON sis.partner = cl.customer_id " \
                 "LEFT JOIN rdl_delivery d ON sis.billing_doc_no=d.billing_doc_no " \
                 "LEFT JOIN rdl_delivery_list dl ON d.id=dl.delivery_id AND sis.matnr=dl.matnr AND sis.batch=dl.batch " \
-                "WHERE dis.da_code = '%s' "+query_date+query+" ;"
+                "WHERE dis.da_code = '%s' AND sis.billing_type NOT IN ('ZD2','ZD4') "+query_date+query+" ;"
         
         data_list = DeliveryInfoModel.objects.raw(sql,[sap_id])
         if len(data_list) == 0:
