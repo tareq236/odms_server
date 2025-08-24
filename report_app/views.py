@@ -105,8 +105,12 @@ def dashboard_report_v2(request, sap_id):
             done = set()
             collection = set()
             return_ = set()
+            total_credit = set()
+            total_credit_delivery = set()
             for item in data_dict:
                 total.add(item['billing_doc_no'])
+                if item['billing_type'] in ('ZD2','ZD4'):
+                    total_credit.add(item['billing_doc_no'])
                 
             if update_cache_data:
                 update_cache_json_data = json.loads(update_cache_data.decode('utf-8'))
@@ -116,6 +120,8 @@ def dashboard_report_v2(request, sap_id):
                         collection.add(item['billing_doc_no'])
                     if item["return_status"] == 1:
                         return_.add(item['billing_doc_no'])
+                    if item['billing_doc_no'] in total_credit:
+                        total_credit_delivery.add(item['billing_doc_no'])
             else:
                 query = """
                     SELECT 
@@ -167,18 +173,46 @@ def dashboard_report_v2(request, sap_id):
                         collection.add(data['billing_doc_no'])
                     if data["return_status"] == 1:
                         return_.add(data['billing_doc_no'])
+                    if data['billing_doc_no'] in total_credit:
+                        total_credit_delivery.add(data['billing_doc_no'])
                 print("cache data updated successfully")
                                             
+            expr_cache_key = f"{sys_date.today()}_{sap_id}_expr_info"
+            if r.exists(expr_cache_key):
+                expr_info = json.loads(r.get(expr_cache_key).decode('utf-8'))
+                withdrawal_remaining = expr_info['withdrawal_remaining']
+                replacement_remaining = expr_info['replacement_remaining']
+            else:
+                query2 = """
+                    SELECT 
+                        COUNT(CASE WHEN wi.da_id = '%s' 
+                                    AND wi.last_status = 'withdrawal_pending' 
+                                THEN wi.id END) AS withdrawal_pending,
+                        COUNT(CASE WHEN wi.delivery_da_id = '%s' 
+                                    AND wi.last_status = 'delivery_pending' 
+                                THEN wi.id END) AS delivery_pending
+                    FROM expr_withdrawal_info wi;
+                    """
+                result = execute_raw_query(query2,[sap_id,sap_id])
+                withdrawal_remaining = result[0][0]
+                replacement_remaining = result[0][1]
+                r.set(expr_cache_key, json.dumps({'withdrawal_remaining': withdrawal_remaining, 'replacement_remaining': replacement_remaining}))   
+                
             data = [{
+                'total_delivery' : len(total),
                 'delivery_remaining': len(total)-len(done),
+                'total_credit' : len(total_credit),
+                'total_credit_delivery': len(total_credit_delivery),
                 'delivery_done': len(done),
-                'cash_remaining': len(done) - len(collection),
+                'cash_remaining': len(done) - len(collection) - len(total_credit_delivery),
                 'cash_done': len(collection),
+                'total_return_quantity':  len(return_),
+                'withdrawal_remaining': withdrawal_remaining,
+                'replacement_remaining': replacement_remaining,
                 'sap_id': sap_id,
                 # 'total_gate_pass_amount': result[0][4],
                 # 'total_collection_amount': result[0][5], 
                 # 'total_return_amount': result[0][6], 
-                'total_return_quantity':  len(return_),
                 # 'due_amount_total': result[0][8],
                 # 'previous_day_due': 0,
                 'time_interval': time_interval,
@@ -187,49 +221,71 @@ def dashboard_report_v2(request, sap_id):
             
             return Response({"success": True, "result": data}, status=status.HTTP_200_OK)
         else:
-            query_1 ="""
-                SELECT COUNT(DISTINCT dis.billing_doc_no)
+            query ="""
+                SELECT 
+                    DISTINCT dis.billing_doc_no,
+                    sis.billing_type,
+                    d.billing_doc_no,
+                    d.cash_collection_status,
+                    d.return_status
                 FROM rdl_delivery_info_sap dis 
                 INNER JOIN rpl_sales_info_sap sis ON dis.billing_doc_no = sis.billing_doc_no
-                INNER JOIN rpl_customer c ON sis.partner = c.partner
-                WHERE dis.billing_date = CURRENT_DATE AND dis.da_code=%s;
+                LEFT JOIN rdl_delivery d ON dis.billing_doc_no = d.billing_doc_no
+                WHERE dis.da_code = '%s' AND dis.billing_date = CURRENT_DATE;
             """
-            total_delivery_result = execute_raw_query(query_1,[sap_id])
-            total_delivery = total_delivery_result[0][0] if total_delivery_result else 0
+            results = execute_raw_query(query,[sap_id])
             
-            query_2 = """
-                SELECT d.billing_doc_no, d.delivery_status, d.cash_collection_status, d.return_status
-                FROM rdl_delivery d 
-                WHERE d.billing_date = CURRENT_DATE AND d.da_code = %s;
-            """
-            delivery_list = execute_raw_query(query_2,[sap_id])
-            delivery_done = 0
+            total_delivery = 0
             delivery_remaining = 0
-            cash_collection =0
-            cash_collection_remaining = 0
-            return_invoice = 0
+            delivery_done = 0
+            cash_remaining = 0
+            cash_done = 0
+            total_return = 0
+            total_credit = 0
+            total_credit_delivery = 0
             
-            for result in delivery_list:
-                if result[1] == 'Done':
+            for result in results:
+                total_delivery += 1
+                if result[1] in ('ZD2', 'ZD4'):
+                    total_credit += 1
+                    if result[2]:
+                        total_credit_delivery += 1
+                if result[2]:
                     delivery_done += 1
-                if result[2] == 'Done':
-                    cash_collection += 1
-                if result[3] == 1:
-                    return_invoice += 1
+                if result[3] == "Done":
+                    cash_done += 1
+                if result[4] == 1:
+                    total_return += 1
                     
-            delivery_remaining = total_delivery - delivery_done
-            cash_collection_remaining = delivery_done - cash_collection
+            query2 = """
+            SELECT 
+                COUNT(CASE WHEN wi.da_id = '%s' 
+                            AND wi.last_status = 'withdrawal_pending' 
+                        THEN wi.id END) AS withdrawal_pending,
+                COUNT(CASE WHEN wi.delivery_da_id = '%s' 
+                            AND wi.last_status = 'delivery_pending' 
+                        THEN wi.id END) AS delivery_pending
+            FROM expr_withdrawal_info wi;
+            """
+            result = execute_raw_query(query2,[sap_id,sap_id])
+            withdrawal_remaining = result[0][0]
+            replacement_remaining = result[0][1]
             
             data = [{
+                'total_delivery' : total_delivery,
+                'total_credit' : total_credit,
+                'total_credit_delivery': total_credit_delivery,
                 'delivery_remaining': delivery_remaining,
                 'delivery_done': delivery_done,
-                'cash_remaining': cash_collection_remaining,
-                'cash_done': cash_collection,
+                'cash_remaining': delivery_done - cash_done - total_credit_delivery,
+                'cash_done': cash_done,
+                'total_return_quantity': total_return,
+                'withdrawal_remaining': withdrawal_remaining,
+                'replacement_remaining': replacement_remaining,
                 'sap_id': sap_id,
                 # 'total_gate_pass_amount': result[0][4],
                 # 'total_collection_amount': result[0][5], 
                 # 'total_return_amount': result[0][6], 
-                'total_return_quantity': return_invoice,
                 # 'due_amount_total': result[0][8],
                 # 'previous_day_due': 0,
                 'time_interval': time_interval,
